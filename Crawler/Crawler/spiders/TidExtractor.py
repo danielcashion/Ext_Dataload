@@ -31,18 +31,61 @@ class TidExtractorSpider(scrapy.Spider):
             tournament_id = response.meta['tournament_id']
             customer_id = response.xpath('//img[@class="tournamentLogo img-thumbnail img-responsive"]').attrib.get('src').split('/')[4]
             divisions = response.xpath('//div[@class="col-xs-6 col-sm-3"]')
+            time_period = self.get_xpath_info(response, 'normalize-space(//div[@class="tournamentDates"]/text())')
+            location = self.get_xpath_info(response, 'normalize-space(//div[@class="tournamentLocation"]/text())')
+
+            try:
+                sport = response.xpath('//div[@id="tournamentSport"]/div/text()')[1].get().replace('\r\n',
+                                                                                                   '').strip()
+            except Exception as e:
+                sport = ''
+
+            try:
+                logo_url = response.xpath('//img[@class="tournamentLogo img-thumbnail img-responsive"]').attrib[
+                    'src']
+            except Exception as e:
+                logo_url = ''
+
+            try:
+                start_date = time_period.split('-')[0].strip()
+            except Exception as e:
+                start_date = ''
+
+            try:
+                end_date = time_period.split('-')[1].strip()
+            except Exception as e:
+                end_date = ''
+
+            # post event
+            event_payload = json.dumps({
+                'IDTournament': tournament_id,
+                'IDCustomer': customer_id,
+                'location_dictionary': None,
+                'status': None,
+                'name': self.get_xpath_info(response, '//h1/a/text()'),
+                'sport': sport,
+                'StartDate': start_date,
+                'EndDate': end_date,
+                'DisplayLocation': location,
+                'is_active_YN': 1,
+                'logo_url': logo_url
+            })
+
+            r = requests.post(url="https://api.tourneymaster.org/v2/ext_events", data=event_payload,
+                              headers={'Content-Type': 'application/json',
+                                       'Authorization': 'Bearer {}'.format(self.access_token)})
 
             for division in divisions:
-                temp_url = division.xpath('./a/@href').extract_first()
-                tournament_division_id = temp_url.split('IDDivision=')[-1]
-                url = 'https://admin.tourneymachine.com/Public/Results/' + temp_url
-                tournament_division_name = self.get_xpath_info(division, './a/div/text()')
-
                 try:
                     last_update = division.xpath('./a/p/span/text()').extract()
                     last_update = ''.join(last_update).replace('Last Updated', '').strip()
                 except Exception as e:
                     last_update = ''
+
+                temp_url = division.xpath('./a/@href').extract_first()
+                tournament_division_id = temp_url.split('IDDivision=')[-1]
+                url = 'https://admin.tourneymachine.com/Public/Results/' + temp_url
+                tournament_division_name = self.get_xpath_info(division, './a/div/text()')
 
                 yield scrapy.FormRequest(url, method='GET', callback=self.get_division_details, meta={
                     'tournament_endpoint': tournament_endpoint,
@@ -52,6 +95,7 @@ class TidExtractorSpider(scrapy.Spider):
                     'customer_id': customer_id,
                     'last_update': last_update
                 })
+
         except Exception as e:
             print(str(e))
 
@@ -64,48 +108,6 @@ class TidExtractorSpider(scrapy.Spider):
         time_period = self.get_xpath_info(response, 'normalize-space(//div[@class="tournamentDates"]/text())')
         location = self.get_xpath_info(response, 'normalize-space(//div[@class="tournamentLocation"]/text())')
         game = response.xpath('//tr[following-sibling::tr and preceding-sibling::thead and count(child::*)>2]')
-        try:
-            sport = response.xpath('//div[@id="tournamentSport"]/div/text()')[1].get().replace('\r\n', '').strip()
-        except Exception as e:
-            sport = ''
-
-        try:
-            logo_url = response.xpath('//img[@class="tournamentLogo img-thumbnail img-responsive"]').attrib['src']
-        except Exception as e:
-            logo_url = ''
-
-        try:
-            start_date = time_period.split('-')[0].strip()
-        except Exception as e:
-            start_date = ''
-
-        try:
-            end_date = time_period.split('-')[1].strip()
-        except Exception as e:
-            end_date = ''
-
-        # post event
-        event_payload = json.dumps({
-            'IDTournament': response.meta['tournament_id'],
-            'IDCustomer': response.meta['customer_id'],
-            'location_dictionary': response.meta['tournament_id'],
-            'status': '',
-            'name': tournament_name,
-            'sport': sport,
-            'StartDate': start_date,
-            'EndDate': end_date,
-            'DisplayLocation': location,
-            'is_active_YN': 1,
-            'created_by': 'scraper',
-            'created_datetime': 'self.curr_date',
-            'updated_by': None,
-            'updated_datetime': None,
-            'logo_url': logo_url
-        })
-
-        r = requests.post(url="https://api.tourneymaster.org/v2/ext_events", data=event_payload,
-                          headers={'Content-Type': 'application/json',
-                                   'Authorization': 'Bearer {}'.format(self.access_token)})
 
         if game:
             for j in game:
@@ -118,7 +120,7 @@ class TidExtractorSpider(scrapy.Spider):
                     game_time = j.xpath('./td[2]//text()').extract()[2].strip()
                     if ':' not in game_time:
                         game_time = j.xpath('./td[2]/b/text()').extract_first().strip()
-                except Exception as e:
+                except Exception as e:.gitignore
                     game_time = ''
 
                 try:
@@ -157,11 +159,6 @@ class TidExtractorSpider(scrapy.Spider):
                     'home_team_name': self.get_xpath_info(j, './td[7]/text()'),
                     'away_score': self.get_xpath_info(j, './td[5]/text()'),
                     'home_score': self.get_xpath_info(j, './td[6]/text()'),
-                    'is_active' : 1,
-                    'created_by': 'scraper',
-                    'created_datetime': 'self.curr_date',
-                    'updated_by': None,
-                    'updated_datetime': None
                 }
 
                 r = requests.post(url="https://api.tourneymaster.org/v2/ext_games", data=json.dumps(game_payload),
