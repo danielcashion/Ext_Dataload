@@ -102,7 +102,7 @@ class TidExtractorSpider(scrapy.Spider):
             'logo_url': logo_url
         }
 
-        r = requests.post(url="https://api.tourneymaster.org/v2/ext_event", data=event_payload,
+        r = requests.post(url="https://api.tourneymaster.org/v2/ext_events", data=event_payload,
                           headers={'Authorization': 'access_token myToken'})
 
         if game:
