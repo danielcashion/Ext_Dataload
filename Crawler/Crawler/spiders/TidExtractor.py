@@ -12,6 +12,7 @@ class TidExtractorSpider(scrapy.Spider):
     allowed_domains = ['tourneymachine.com']
     start_urls = ['https://tourneymachine.com/Home.aspx/']
     curr_date = datetime.utcnow()
+    access_token = ''
 
     def parse(self, response):
         if not self.tid:
@@ -103,7 +104,8 @@ class TidExtractorSpider(scrapy.Spider):
         }
 
         r = requests.post(url="https://api.tourneymaster.org/v2/ext_events", data=event_payload,
-                          headers={'Authorization': 'access_token myToken'})
+                          headers={'Content-Type': 'application/json',
+                                   'Authorization': 'Bearer {}'.format(self.access_token)})
 
         if game:
             for j in game:
@@ -163,7 +165,8 @@ class TidExtractorSpider(scrapy.Spider):
                 }
 
                 r = requests.post(url="https://api.tourneymaster.org/v2/ext_games", data=game_payload,
-                                  headers={'Authorization': 'access_token myToken'})
+                                  headers={'Content-Type': 'application/json',
+                                           'Authorization': 'Bearer {}'.format(self.access_token)})
 
 
 
