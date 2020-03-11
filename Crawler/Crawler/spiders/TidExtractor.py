@@ -4,7 +4,7 @@ import scrapy
 import re
 from datetime import datetime
 from Crawler.items import TourneymachineItem
-
+import json
 
 class TidExtractorSpider(scrapy.Spider):
     name = 'TidExtractor'
@@ -12,7 +12,7 @@ class TidExtractorSpider(scrapy.Spider):
     allowed_domains = ['tourneymachine.com']
     start_urls = ['https://tourneymachine.com/Home.aspx/']
     curr_date = datetime.utcnow()
-    access_token = ''
+    access_token = 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIyNjE1M2UwMS03OWU0LTRhMGEtYmYzZC0xMmIzOTU2Zjk1NjYiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiNjIxYTllOGItN2MwYi00NzQ4LWI4MjItY2NhZmNmMzJmMmRlIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODM5NjIyMDksImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiIyNjE1M2UwMS03OWU0LTRhMGEtYmYzZC0xMmIzOTU2Zjk1NjYiLCJleHAiOjE1ODM5NjU4MDksImlhdCI6MTU4Mzk2MjIwOSwiZW1haWwiOiJkYW5pZWwuY2FzaGlvbi5ueWNAZ21haWwuY29tIn0.gL941dhWkdOoFk2EqfsMjnxVoy17TThV7D-neYw1oStb0YiOWP_d-xMPr94jnw6eMHGwbZWDw_lJs0hSTFXsPgJYxt7a68LH49t7EhwaVB8sq7M0LHQsgrhrylgUD3x0qEHUKE3EbQZIbkowreS9jy-jgO5ePAWdT8qWmSZVFhOUVeI-Lc3z58kojI9rKstS0iVvE7vYRgKpA-vZoubf-sGr-Kp7QAs21TRin67nxZt3TBemTEUIFDwr5mIN3BROHdf4UTOLzlq95wVeTJ7xGLz1Vw5nmnGLePgVG-wcHN51JdXdxX9OGh-1aYG5uoA7uCXRnQz21OMRlRHkKp59Jw'
 
     def parse(self, response):
         if not self.tid:
@@ -85,7 +85,7 @@ class TidExtractorSpider(scrapy.Spider):
             end_date = ''
 
         # post event
-        event_payload = {
+        event_payload = json.dumps({
             'IDTournament': response.meta['tournament_id'],
             'IDCustomer': response.meta['customer_id'],
             'location_dictionary': response.meta['tournament_id'],
@@ -97,11 +97,11 @@ class TidExtractorSpider(scrapy.Spider):
             'DisplayLocation': location,
             'is_active_YN': 1,
             'created_by': 'scraper',
-            'created_datetime': self.curr_date,
+            'created_datetime': 'self.curr_date',
             'updated_by': None,
             'updated_datetime': None,
             'logo_url': logo_url
-        }
+        })
 
         r = requests.post(url="https://api.tourneymaster.org/v2/ext_events", data=event_payload,
                           headers={'Content-Type': 'application/json',
@@ -164,7 +164,7 @@ class TidExtractorSpider(scrapy.Spider):
                     'updated_datetime': None
                 }
 
-                r = requests.post(url="https://api.tourneymaster.org/v2/ext_games", data=game_payload,
+                r = requests.post(url="https://api.tourneymaster.org/v2/ext_games", data=json.dumps(game_payload),
                                   headers={'Content-Type': 'application/json',
                                            'Authorization': 'Bearer {}'.format(self.access_token)})
 
