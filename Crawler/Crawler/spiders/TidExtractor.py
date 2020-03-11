@@ -159,7 +159,7 @@ class TidExtractorSpider(scrapy.Spider):
                     'home_score': self.get_xpath_info(j, './td[6]/text()'),
                     'is_active' : 1,
                     'created_by': 'scraper',
-                    'created_datetime': self.curr_date,
+                    'created_datetime': 'self.curr_date',
                     'updated_by': None,
                     'updated_datetime': None
                 }
