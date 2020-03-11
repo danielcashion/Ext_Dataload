@@ -102,7 +102,8 @@ class TidExtractorSpider(scrapy.Spider):
             'logo_url': logo_url
         }
 
-        r = requests.post(url="https://api.tourneymaster.org/v2/ext_event", data=event_payload)
+        r = requests.post(url="https://api.tourneymaster.org/v2/ext_event", data=event_payload,
+                          headers={'Authorization': 'access_token myToken'})
 
         if game:
             for j in game:
@@ -161,7 +162,8 @@ class TidExtractorSpider(scrapy.Spider):
                     'updated_datetime': None
                 }
 
-                r = requests.post(url="https://api.tourneymaster.org/v2/ext_games", data=game_payload)
+                r = requests.post(url="https://api.tourneymaster.org/v2/ext_games", data=game_payload,
+                                  headers={'Authorization': 'access_token myToken'})
 
 
 
