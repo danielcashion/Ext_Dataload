@@ -120,7 +120,7 @@ class TidExtractorSpider(scrapy.Spider):
                     game_time = j.xpath('./td[2]//text()').extract()[2].strip()
                     if ':' not in game_time:
                         game_time = j.xpath('./td[2]/b/text()').extract_first().strip()
-                except Exception as e:.gitignore
+                except Exception as e:
                     game_time = ''
 
                 try:
