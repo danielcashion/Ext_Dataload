@@ -297,7 +297,7 @@ def get_locations(response, **kwargs):
             for facility in _facilities:
                 _facility_id = facility.text
                 _locations['{} - {}'.format(_name, _facility_id)] = _id
-                _location_payload[keys.facility_id] = _facility_id,
+                _location_payload[keys.facility_id] = _facility_id
 
                 r = push_to_api('ext_locations', _location_payload)
         else:
