@@ -12,6 +12,10 @@ from requests import HTTPError
 class Keys:
     api_root = 'https://api.tourneymaster.org/v2/'
     response_content = 'response_content'
+    method = 'method'
+    key = 'key'
+    row_num = 'row_num'
+
 
     #tourneymachine_events
     customer_id = 'IDCustomer'
@@ -77,10 +81,11 @@ keys = Keys()
 
 #curr_date = datetime.utcnow()
 
-_access_token = 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiNzdhNjIxMzctM2Q0YS00ZWQxLTlkZjktYjZhNWViNzU0MTVmIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODQwMjkxNDQsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODQwMzI3NDQsImlhdCI6MTU4NDAyOTE0NCwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.kWxW0iWyU4PswD4fflHq6FxJUYF46GoJ3d23IBDwvgvh8GRGVqfE805JVBcRHLEp_rbzMgHgbcyDdbCvXJIjH5w0Rek0ATaEKRkS8ylyLxq5-23a5Dd-GzkYwoZUEcw7KD0lKaq0ZvoHwQNwOu9hkh9cBtvQIcfASmyDRno5vDIdAGDocYc0YX_MOPno_7zir57fB--0XQjcGFBzrF1MIuvmUkA4wjkXOulMPwW6Fhq1-BhJV5K_BVFSe31I7Qm0y_-ruGsiJ0tenAyBtvyYto57N6IIenmgo9qXJDH2Zr-IVq_iqp-AmjXioVoY5ikwzc4Z4Q2g4Xh9DS66ryS_Kw'
+_access_token = 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiMzBhNDNhZjAtNWJiMi00OGYyLWIyZDUtYzFlNDUyNGFkY2FkIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODQwNDkyMjEsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODQwNTI4MjEsImlhdCI6MTU4NDA0OTIyMSwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.jeJ0XtILgYHiTzM7sUNdoxM2QGMbhd_kUD_nxjkk7-CbDzl0SsuZmnGk_joZ6lKLy4rmmNwQexOgHINqEPoq0W548GpzYJUl1Ey_Kw5kCnEVj3yC4BCeWpn_aFycNt9uVOobJUDmT4-NsLGNVYkO59Y_aDCtXoSM8IxW81sWaZYwLI0uZTGF1Gb77Cu7G95ygAgLP8eCk0xQTfoW65wNam_zZhmo3nzGQ-9DkusbNNhnsGsIAHntoKUiuyOVp2a-8gDLc8nMb6eXgyIUfFlMvObHvdU8yFqAJrj43SxrZDvZE1Foyi4Nsv_g-5bEmwaT6coQZ_BHFpjoK6U-ZhC-8A'
 
 _games = []
 _pools = []
+
 
 def scrape(event, context):
     _start = time.time()
@@ -114,7 +119,25 @@ def get_xpath_info(target, xpath_str):
         return _.strip()
 
 
-def push_to_api(endpoint, payload, method='POST'):
+def get_from_api(endpoint, payload, search_params):
+    try:
+
+        response = requests.get(url="{}{}?{}".format(keys.api_root, endpoint, search_params),
+                                data=json.dumps(payload),
+                                headers={'Content-Type': 'application/json',
+                                         'Authorization': 'Bearer {}'.format(_access_token)})
+
+        response.raise_for_status()
+
+    except HTTPError as http_err:
+        raise APIError(f'HTTP error occurred: {http_err}')
+    except Exception as err:
+        raise ScrapeError(f'Other error occurred: {err}')
+    else:
+        return response
+
+
+def push_to_api(endpoint, payload, method='POST', **kwargs):
     try:
         if method == 'POST':
             response = requests.post(url="{}{}".format(keys.api_root, endpoint),
@@ -122,10 +145,10 @@ def push_to_api(endpoint, payload, method='POST'):
                              headers={'Content-Type': 'application/json',
                                       'Authorization': 'Bearer {}'.format(_access_token)})
         else:
-            response = requests.put(url="{}{}".format(keys.api_root, endpoint),
-                                 data=json.dumps(payload),
-                                 headers={'Content-Type': 'application/json',
-                                          'Authorization': 'Bearer {}'.format(_access_token)})
+            response = requests.put(url="{}{}?row_num={}".format(keys.api_root, endpoint, kwargs[keys.key]),
+                                    data=json.dumps(payload),
+                                    headers={'Content-Type': 'application/json',
+                                             'Authorization': 'Bearer {}'.format(_access_token)})
         response.raise_for_status()
 
     except HTTPError as http_err:
@@ -144,12 +167,22 @@ def get_tournament(response, **kwargs):
     customer_id = tree.xpath('//img[@class="tournamentLogo img-thumbnail img-responsive"]')[0].attrib.get('src').split('/')[4]
     divisions = tree.xpath('//div[@class="col-xs-6 col-sm-3"]')
 
-    _event = get_event(tree, tournament_id, customer_id)
+    _cur_event = json.loads(get_from_api('ext_events', {}, '{}={}'.format(keys.tournament_id, tournament_id)).content)
+
+    if _cur_event:
+        _method = 'PUT'
+        _event = get_event(tree, tournament_id, customer_id, 'PUT', **{keys.key: _cur_event[0][keys.row_num]})
+
+    else:
+        _method = 'POST'
+        _event = get_event(tree, tournament_id, customer_id, _method)
+
     _locations = get_locations(html.fromstring(response.content), **{
             keys.tournament_endpoint: tournament_endpoint,
             keys.tournament_id: tournament_id,
             keys.customer_id: customer_id,
-            keys.response_content: response.content
+            keys.response_content: response.content,
+            keys.method: _method
     })
 
     for division in divisions:
@@ -172,7 +205,8 @@ def get_tournament(response, **kwargs):
             keys.customer_id: customer_id,
             keys.last_update: last_update,
             keys.response_content: response.content,
-            keys.locations: _locations
+            keys.locations: _locations,
+            keys.method: _method
         })
 
     return _event, divisions, _locations
@@ -187,13 +221,13 @@ def get_division_details(response, **kwargs):
     kwargs[keys.time_period] = get_xpath_info(tree, 'normalize-space(//div[@class="tournamentDates"]/text())')
     kwargs[keys.location_id] = get_xpath_info(tree, 'normalize-space(//div[@class="tournamentLocation"]/text())')
 
-    _games = get_games(tree, **kwargs)
-    _pools = get_pools(tree, **kwargs)
+    get_games(tree, **kwargs)
+    get_pools(tree, **kwargs)
 
     return _games, _pools
 
 
-def get_event(response, tournament_id, customer_id):
+def get_event(response, tournament_id, customer_id, method, **kwargs):
     print('Extracting {} event'.format(tournament_id))
     time_period = get_xpath_info(response, 'normalize-space(//div[@class="tournamentDates"]/text())')
     location = get_xpath_info(response, 'normalize-space(//div[@class="tournamentLocation"]/text())')
@@ -232,13 +266,18 @@ def get_event(response, tournament_id, customer_id):
         keys.is_active_yn: 1,
         keys.logo_url: logo_url
     }
-
-    push_to_api('ext_events', event_payload)
+    push_to_api('ext_events', event_payload, method, **kwargs)
     return event_payload
 
 
 def get_games(response, **kwargs):
     games = response.xpath('//tr[following-sibling::tr and preceding-sibling::thead and count(child::*)>2]')
+    _current_games = {}
+
+    if kwargs[keys.method] == 'PUT':
+        _current_games = get_from_api('ext_games', {}, '{}={}'.format(keys.tournament_id, kwargs[keys.tournament_id]))
+        _current_games = json.loads(_current_games.content)
+        _current_games = dict(((_[keys.tournament_id], _[keys.tournament_division_id], _[keys.game_id]), _[keys.row_num]) for _ in _current_games)
 
     if games:
         for game in games:
@@ -291,14 +330,23 @@ def get_games(response, **kwargs):
                 keys.away_score: get_xpath_info(game, './td[5]/text()'),
                 keys.home_score: get_xpath_info(game, './td[6]/text()'),
             }
+            _key = _current_games.get((_game_payload[keys.tournament_id],
+                                       _game_payload[keys.tournament_division_id],
+                                       _game_payload[keys.game_id]))
 
-            push_to_api('ext_games', _game_payload)
+            push_to_api('ext_games', _game_payload, kwargs[keys.method] if _key else 'POST', **{keys.key: _key})
             _games.append(_game_payload)
 
 
 def get_pools(response, **kwargs):
     pools = response.xpath('//table[contains(@class, "table table-bordered table-striped tournamentResultsTable")]')
     _pools = []
+    _current_pools = {}
+
+    if kwargs[keys.method] == 'PUT':
+        _current_pools = get_from_api('ext_pools', {}, '{}={}'.format(keys.tournament_id, kwargs[keys.tournament_id]))
+        _current_pools = json.loads(_current_pools.content)
+        _current_pools = dict(((_[keys.tournament_id], _[keys.division_id], _[keys.team_id], _[keys.pool_description]), _[keys.row_num]) for _ in _current_pools)
 
     for pool in pools:
         _pool_id = pool.xpath('.//thead/tr/th/text()')[0].strip()
@@ -310,16 +358,27 @@ def get_pools(response, **kwargs):
                 keys.pool_description: _pool_id,
                 keys.team_id: team.split('IDTeam=')[1].strip()
             }
-            push_to_api('ext_pools', _pool_payload)
+            _key = _current_pools.get(_pool_payload[keys.tournament_id],
+                                      _pool_payload.get(keys.tournament_division_id),
+                                      _pool_payload.get(keys.team_id),
+                                      _pool_payload.get(keys.pool_description))
+            push_to_api('ext_pools', _pool_payload, kwargs[keys.method] if _key else 'POST', **{keys.key: _key})
             _pools.append(_pool_payload)
 
 
 def get_locations(response, **kwargs):
     _locations = {}
+    _curr_locations = {}
+
+    if kwargs[keys.method] == 'PUT':
+        _curr_locations = get_from_api('ext_locations', {}, '{}={}'.format(keys.tournament_id, kwargs[keys.tournament_id]))
+        _curr_locations = json.loads(_curr_locations.content)
+        _curr_locations = dict(((_[keys.tournament_id],_[keys.complex_id], _[keys.facility_id]), _[keys.row_num]) for _ in _curr_locations)
 
     address_info = response.xpath('//div[@class="panel panel-default panel-places complexList"]/div/div')
 
     _tmp = 0
+
     for i in range(0, int(len(address_info)/2)):
 
         _div_1 = address_info[i + _tmp]
@@ -363,11 +422,17 @@ def get_locations(response, **kwargs):
                 _facility_id = facility.text
                 _locations['{} - {}'.format(_name, _facility_id)] = _id
                 _location_payload[keys.facility_id] = _facility_id
+                _key = _curr_locations.get((_location_payload[keys.tournament_id],
+                                                   _location_payload[keys.complex_id],
+                                                   _location_payload[keys.facility_id]))
 
-                r = push_to_api('ext_locations', _location_payload)
+                r = push_to_api('ext_locations', _location_payload, kwargs[keys.method] if _key else 'POST',
+                                **{keys.key: _key})
         else:
             _locations[_name] = _id
-            r = push_to_api('ext_locations', _location_payload)
+            _key = _curr_locations.get((_location_payload[keys.tournament_id],_location_payload[keys.complex_id], None))
+            r = push_to_api('ext_locations', _location_payload, kwargs[keys.method] if _key else 'POST',
+                            **{keys.key: _key})
 
     return _locations
 
