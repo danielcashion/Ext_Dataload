@@ -79,6 +79,8 @@ keys = Keys()
 
 _access_token = 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiNzdhNjIxMzctM2Q0YS00ZWQxLTlkZjktYjZhNWViNzU0MTVmIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODQwMjkxNDQsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODQwMzI3NDQsImlhdCI6MTU4NDAyOTE0NCwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.kWxW0iWyU4PswD4fflHq6FxJUYF46GoJ3d23IBDwvgvh8GRGVqfE805JVBcRHLEp_rbzMgHgbcyDdbCvXJIjH5w0Rek0ATaEKRkS8ylyLxq5-23a5Dd-GzkYwoZUEcw7KD0lKaq0ZvoHwQNwOu9hkh9cBtvQIcfASmyDRno5vDIdAGDocYc0YX_MOPno_7zir57fB--0XQjcGFBzrF1MIuvmUkA4wjkXOulMPwW6Fhq1-BhJV5K_BVFSe31I7Qm0y_-ruGsiJ0tenAyBtvyYto57N6IIenmgo9qXJDH2Zr-IVq_iqp-AmjXioVoY5ikwzc4Z4Q2g4Xh9DS66ryS_Kw'
 
+_games = []
+_pools = []
 
 def scrape(event, context):
     _start = time.time()
@@ -90,7 +92,7 @@ def scrape(event, context):
 
     _url = '{}={}'.format(_tournament_base_url, _tournament_id)
     response = requests.get(_url)
-    _event, _divisions, _games, _pools, _locations = get_tournament(response, **{keys.tournament_endpoint: _url,
+    _event, _divisions, _locations = get_tournament(response, **{keys.tournament_endpoint: _url,
                                                               keys.tournament_id: _tournament_id})
 
     _end = time.time()
@@ -162,7 +164,7 @@ def get_tournament(response, **kwargs):
         tournament_division_name = get_xpath_info(division, './a/div/text()')
 
         response = requests.get(_url)
-        _games, _pools = get_division_details(response, **{
+        get_division_details(response, **{
             keys.tournament_endpoint: tournament_endpoint,
             keys.tournament_division_id: tournament_division_id,
             keys.tournament_id: tournament_id,
@@ -173,7 +175,7 @@ def get_tournament(response, **kwargs):
             keys.locations: _locations
         })
 
-    return _event, divisions, _games, _pools, _locations
+    return _event, divisions, _locations
 
 
 def get_division_details(response, **kwargs):
@@ -237,7 +239,6 @@ def get_event(response, tournament_id, customer_id):
 
 def get_games(response, **kwargs):
     games = response.xpath('//tr[following-sibling::tr and preceding-sibling::thead and count(child::*)>2]')
-    _games = []
 
     if games:
         for game in games:
@@ -294,8 +295,6 @@ def get_games(response, **kwargs):
             push_to_api('ext_games', _game_payload)
             _games.append(_game_payload)
 
-    return _games
-
 
 def get_pools(response, **kwargs):
     pools = response.xpath('//table[contains(@class, "table table-bordered table-striped tournamentResultsTable")]')
@@ -313,8 +312,6 @@ def get_pools(response, **kwargs):
             }
             push_to_api('ext_pools', _pool_payload)
             _pools.append(_pool_payload)
-
-    return _pools
 
 
 def get_locations(response, **kwargs):
