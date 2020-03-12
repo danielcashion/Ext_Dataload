@@ -1,9 +1,12 @@
 # # -*- coding: utf-8 -*-
+import time
+
 from lxml import html
 import requests
 import re
-from datetime import datetime
 import json
+
+from requests import HTTPError
 
 
 class Keys:
@@ -54,7 +57,7 @@ class Keys:
     city = 'City'
     state = 'State'
     zip = 'Zip'
-    long = 'Long'
+    long = 'tourneymachine_locations.Long'
     lat = 'Lat'
     notes = 'Notes'
     facility_id = 'IDFacilities'
@@ -63,16 +66,22 @@ class Keys:
 
     locations = 'locations'
 
+class APIError(Exception):
+    pass
+
+class ScrapeError(Exception):
+    pass
 
 keys = Keys()
 
 
 #curr_date = datetime.utcnow()
 
-_access_token = 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiNmEwNmNhOWYtNzU2MS00MTFhLWFiNDMtNTRjYTlkMDZhNjYzIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODM5ODI2NzUsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODM5ODYyNzUsImlhdCI6MTU4Mzk4MjY3NSwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.gD0R8n_QNZV122b63Tid7GS7mIss0snzA19eL5cNvH1zF-htpwh54s2tK6_bpiONjjyHWYYhcxte-stp_43dKF2rUF4NHlc4Z09OfoNw0BDU_fdB1I0lR9BHh7rnMbD9sPSn8943Cah-ByPfwwenCwdVIqOXM2ForWuwoTR7dr0Gn-6VtSViz46wMd3Zqzd9_bTRnyUBp-Edo3J5FjwGN0I7HhSLR-o-qoSeMiMQm3Be0eGEttF7BteeMNEG-GTFKv2Xnm9g6MxhBBRxEsYE4By_38cEh6SvyWCGPWWwbjgdFP8NhLDmxzYHTaO5kw82VP9BcpkHbVlNJfZFsm2ALw'
+_access_token = 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiNzdhNjIxMzctM2Q0YS00ZWQxLTlkZjktYjZhNWViNzU0MTVmIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODQwMjkxNDQsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODQwMzI3NDQsImlhdCI6MTU4NDAyOTE0NCwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.kWxW0iWyU4PswD4fflHq6FxJUYF46GoJ3d23IBDwvgvh8GRGVqfE805JVBcRHLEp_rbzMgHgbcyDdbCvXJIjH5w0Rek0ATaEKRkS8ylyLxq5-23a5Dd-GzkYwoZUEcw7KD0lKaq0ZvoHwQNwOu9hkh9cBtvQIcfASmyDRno5vDIdAGDocYc0YX_MOPno_7zir57fB--0XQjcGFBzrF1MIuvmUkA4wjkXOulMPwW6Fhq1-BhJV5K_BVFSe31I7Qm0y_-ruGsiJ0tenAyBtvyYto57N6IIenmgo9qXJDH2Zr-IVq_iqp-AmjXioVoY5ikwzc4Z4Q2g4Xh9DS66ryS_Kw'
 
 
 def scrape(event, context):
+    _start = time.time()
     _tournament_id = event.get('tid')
     _tournament_base_url = 'https://tourneymachine.com/Public/Results/Tournament.aspx?IDTournament'
 
@@ -81,7 +90,18 @@ def scrape(event, context):
 
     _url = '{}={}'.format(_tournament_base_url, _tournament_id)
     response = requests.get(_url)
-    get_tournament(response, **{keys.tournament_endpoint: _url, keys.tournament_id: _tournament_id})
+    _event, _divisions, _games, _pools, _locations = get_tournament(response, **{keys.tournament_endpoint: _url,
+                                                              keys.tournament_id: _tournament_id})
+
+    _end = time.time()
+    _t_delta = _end - _start
+    _message = 'Scraped {} games, {} pools, and {} locations across {} divisions for tournament {} ({}) in {} seconds'.format(
+        len(_games), len(_pools), len(_locations), len(_divisions), _event[keys.name], _event[keys.tournament_id], _t_delta)
+
+    print(_message)
+    return {
+        'message': _message
+    }
 
 
 def get_xpath_info(target, xpath_str):
@@ -92,11 +112,26 @@ def get_xpath_info(target, xpath_str):
         return _.strip()
 
 
-def push_to_api(endpoint, payload):
-    return requests.post(url="{}{}".format(keys.api_root, endpoint),
-                         data=json.dumps(payload),
-                         headers={'Content-Type': 'application/json',
-                                  'Authorization': 'Bearer {}'.format(_access_token)})
+def push_to_api(endpoint, payload, method='POST'):
+    try:
+        if method == 'POST':
+            response = requests.post(url="{}{}".format(keys.api_root, endpoint),
+                             data=json.dumps(payload),
+                             headers={'Content-Type': 'application/json',
+                                      'Authorization': 'Bearer {}'.format(_access_token)})
+        else:
+            response = requests.put(url="{}{}".format(keys.api_root, endpoint),
+                                 data=json.dumps(payload),
+                                 headers={'Content-Type': 'application/json',
+                                          'Authorization': 'Bearer {}'.format(_access_token)})
+        response.raise_for_status()
+
+    except HTTPError as http_err:
+        raise APIError(f'HTTP error occurred: {http_err}')
+    except Exception as err:
+        raise ScrapeError(f'Other error occurred: {err}')
+    else:
+        return response
 
 
 def get_tournament(response, **kwargs):
@@ -107,7 +142,13 @@ def get_tournament(response, **kwargs):
     customer_id = tree.xpath('//img[@class="tournamentLogo img-thumbnail img-responsive"]')[0].attrib.get('src').split('/')[4]
     divisions = tree.xpath('//div[@class="col-xs-6 col-sm-3"]')
 
-    get_event(tree, tournament_id, customer_id)
+    _event = get_event(tree, tournament_id, customer_id)
+    _locations = get_locations(html.fromstring(response.content), **{
+            keys.tournament_endpoint: tournament_endpoint,
+            keys.tournament_id: tournament_id,
+            keys.customer_id: customer_id,
+            keys.response_content: response.content
+    })
 
     for division in divisions:
         try:
@@ -121,17 +162,22 @@ def get_tournament(response, **kwargs):
         tournament_division_name = get_xpath_info(division, './a/div/text()')
 
         response = requests.get(_url)
-        get_division_details(response, **{
+        _games, _pools = get_division_details(response, **{
             keys.tournament_endpoint: tournament_endpoint,
             keys.tournament_division_id: tournament_division_id,
             keys.tournament_id: tournament_id,
             keys.tournament_division_name: tournament_division_name,
             keys.customer_id: customer_id,
-            keys.last_update: last_update
+            keys.last_update: last_update,
+            keys.response_content: response.content,
+            keys.locations: _locations
         })
+
+    return _event, divisions, _games, _pools, _locations
 
 
 def get_division_details(response, **kwargs):
+    print('Extracting division {}'.format(kwargs[keys.tournament_division_name]))
     tree = html.fromstring(response.content)
 
     kwargs[keys.response_content] = response.content
@@ -139,13 +185,14 @@ def get_division_details(response, **kwargs):
     kwargs[keys.time_period] = get_xpath_info(tree, 'normalize-space(//div[@class="tournamentDates"]/text())')
     kwargs[keys.location_id] = get_xpath_info(tree, 'normalize-space(//div[@class="tournamentLocation"]/text())')
 
-    locations = get_locations(tree, **kwargs)
-    kwargs[keys.locations] = locations
-    get_games(tree, **kwargs)
-    get_pools(tree, **kwargs)
+    _games = get_games(tree, **kwargs)
+    _pools = get_pools(tree, **kwargs)
+
+    return _games, _pools
 
 
 def get_event(response, tournament_id, customer_id):
+    print('Extracting {} event'.format(tournament_id))
     time_period = get_xpath_info(response, 'normalize-space(//div[@class="tournamentDates"]/text())')
     location = get_xpath_info(response, 'normalize-space(//div[@class="tournamentLocation"]/text())')
 
@@ -183,16 +230,19 @@ def get_event(response, tournament_id, customer_id):
         keys.is_active_yn: 1,
         keys.logo_url: logo_url
     }
-    r = push_to_api('ext_events', event_payload)
+
+    push_to_api('ext_events', event_payload)
+    return event_payload
 
 
 def get_games(response, **kwargs):
     games = response.xpath('//tr[following-sibling::tr and preceding-sibling::thead and count(child::*)>2]')
+    _games = []
 
     if games:
         for game in games:
             game_id = get_xpath_info(game, './td[1]/text()')
-
+            print('Extracting {} game'.format(game_id))
             if not game_id:
                 continue
 
@@ -241,14 +291,19 @@ def get_games(response, **kwargs):
                 keys.home_score: get_xpath_info(game, './td[6]/text()'),
             }
 
-            r = push_to_api('ext_games', _game_payload)
+            push_to_api('ext_games', _game_payload)
+            _games.append(_game_payload)
+
+    return _games
 
 
 def get_pools(response, **kwargs):
     pools = response.xpath('//table[contains(@class, "table table-bordered table-striped tournamentResultsTable")]')
+    _pools = []
 
     for pool in pools:
         _pool_id = pool.xpath('.//thead/tr/th/text()')[0].strip()
+        print('Extracting {} pool'.format(_pool_id))
         for team in pool.xpath('./tbody/tr/td/a/@href'):
             _pool_payload = {
                 keys.tournament_id: kwargs[keys.tournament_id],
@@ -256,7 +311,10 @@ def get_pools(response, **kwargs):
                 keys.pool_description: _pool_id,
                 keys.team_id: team.split('IDTeam=')[1].strip()
             }
-            r = push_to_api('ext_pools', _pool_payload)
+            push_to_api('ext_pools', _pool_payload)
+            _pools.append(_pool_payload)
+
+    return _pools
 
 
 def get_locations(response, **kwargs):
@@ -266,20 +324,27 @@ def get_locations(response, **kwargs):
 
     _tmp = 0
     for i in range(0, int(len(address_info)/2)):
+
         _div_1 = address_info[i + _tmp]
         _div_2 = address_info[i + 1 + _tmp]
         _tmp += 1
 
         _id = _div_1.attrib['data-id']
         _name = _div_1.xpath('h4')[0].text
+        print('Extracting {} location'.format(_name))
         _lat = re.search(r"complex{}.lat = \\'(.+?)\\';".format(i), str(kwargs['response_content'])).groups()[0]
         _long = re.search(r"complex{}.long = \\'(.+?)\\';".format(i), str(kwargs['response_content'])).groups()[0]
 
         try:
-            _address = '{} {}'.format(_div_2.xpath('./a/address')[0].text.strip(),
-                                  _div_2.xpath('./a/address/br')[0].tail.strip())
+            # this may need to be tweaked for new data. Assumes all addresses will have same format
+            _address = _div_2.xpath('./a/address')[0].text.strip()
+            _city_state_zip = _div_2.xpath('./a/address/br')[0].tail.split(',')
+            _city = _city_state_zip[0].strip()
+            _state, _zip = _city_state_zip[1].strip().split(' ')
+
         except Exception as e:
-            _address = ''
+            _address, _city, _state, _zip = '', '', '', ''
+
         _facilities = _div_2.xpath('./ul/li/b')
         _location_payload = {
             keys.location_dictionary: _id,
@@ -287,6 +352,9 @@ def get_locations(response, **kwargs):
             keys.tournament_id: kwargs[keys.tournament_id],
             keys.locations_name: _name,
             keys.address: _address,
+            keys.city: _city,
+            keys.state: _state,
+            keys.zip: _zip,
             keys.long: _long,
             keys.lat: _lat,
             keys.notes: '',
