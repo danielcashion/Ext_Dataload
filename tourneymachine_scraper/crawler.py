@@ -1,5 +1,6 @@
 # # -*- coding: utf-8 -*-
 import time
+import os
 
 from lxml import html
 import requests
@@ -89,6 +90,12 @@ _pools = []
 
 def scrape(event, context):
     _start = time.time()
+    # Get access token if available
+    if 'token' in event.keys():
+        print('Using token from event["token"]: ', event['token'])
+        global _access_token
+        _access_token = event['token']
+
     _tournament_id = event.get('tid')
     _tournament_base_url = 'https://tourneymachine.com/Public/Results/Tournament.aspx?IDTournament'
 
@@ -435,5 +442,6 @@ def get_locations(response, **kwargs):
 
     return _locations
 
-
-scrape({'tid': 'h20190705131052863fcdd6f2ef3c542'}, None)
+# Do not run scrape if in Lambda
+if 'LAMBDA_TASK_ROOT' not in os.environ:
+    scrape({'tid': 'h20190705131052863fcdd6f2ef3c542'}, None)

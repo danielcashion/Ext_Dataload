@@ -1,0 +1,77 @@
+{
+	"resource": "/tourneymachine",
+	"path": "/v2test/tourneymachine",
+	"httpMethod": "POST",
+	"headers": {
+		"Accept": "*/*",
+		"Accept-Encoding": "gzip, deflate, br",
+		"Authorization": "Bearer eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiODA5ZmJhZGYtZWRmMy00N2MzLThiOWItNDNlZjdlNjA2NmUyIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODQwNTg5ODcsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODQwNjI1ODcsImlhdCI6MTU4NDA1ODk4NywiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.poVexIO1QUl5AWHX3_iiCehmsdiFNkMfknNPW80wDMa_ANQl35kKhQ5wwYk0Jk_sgp_xjwf_G9TZ8dZ9tQYoagbGsHfBtisyp_oGezbLAtW-Zg6UupJLwbp7Cnm3h6p_MGZn3rIBhqhtm_Sai_5NrQGtntji1Wp8dFtsCHzt5O8N9sNkXvgJLTjqaJyrVbbASvmViw7FoMOTPph2jGwe6GCXKOETspezK1B6_PRXhLrAhQ-HSeB6EFbH29W0gJzflLi75tdgAFIoNpN0MhFF9BDfdbIWhb9dsErTBvSPER3A6_kAv8_pO8URnY_cPZIDfnrAxbuxnSkD6GHAT7ITaQ",
+		"Cache-Control": "no-cache",
+		"Content-Type": "application/json",
+		"Host": "api.tourneymaster.org",
+		"Postman-Token": "3db6c079-7f0b-4938-80ea-2e3a11e09c2e",
+		"User-Agent": "PostmanRuntime/7.23.0",
+		"X-Amzn-Trace-Id": "Root=1-5e6ad30a-845e747c915f9cc8d5504280",
+		"X-Forwarded-For": "108.217.86.168",
+		"X-Forwarded-Port": "443",
+		"X-Forwarded-Proto": "https"
+	},
+	"multiValueHeaders": {
+		"Accept": ["*/*"],
+		"Accept-Encoding": ["gzip, deflate, br"],
+		"Authorization": [
+			"Bearer eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiODA5ZmJhZGYtZWRmMy00N2MzLThiOWItNDNlZjdlNjA2NmUyIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODQwNTg5ODcsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODQwNjI1ODcsImlhdCI6MTU4NDA1ODk4NywiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.poVexIO1QUl5AWHX3_iiCehmsdiFNkMfknNPW80wDMa_ANQl35kKhQ5wwYk0Jk_sgp_xjwf_G9TZ8dZ9tQYoagbGsHfBtisyp_oGezbLAtW-Zg6UupJLwbp7Cnm3h6p_MGZn3rIBhqhtm_Sai_5NrQGtntji1Wp8dFtsCHzt5O8N9sNkXvgJLTjqaJyrVbbASvmViw7FoMOTPph2jGwe6GCXKOETspezK1B6_PRXhLrAhQ-HSeB6EFbH29W0gJzflLi75tdgAFIoNpN0MhFF9BDfdbIWhb9dsErTBvSPER3A6_kAv8_pO8URnY_cPZIDfnrAxbuxnSkD6GHAT7ITaQ"
+		],
+		"Cache-Control": ["no-cache"],
+		"Content-Type": ["application/json"],
+		"Host": ["api.tourneymaster.org"],
+		"Postman-Token": ["3db6c079-7f0b-4938-80ea-2e3a11e09c2e"],
+		"User-Agent": ["PostmanRuntime/7.23.0"],
+		"X-Amzn-Trace-Id": ["Root=1-5e6ad30a-845e747c915f9cc8d5504280"],
+		"X-Forwarded-For": ["108.217.86.168"],
+		"X-Forwarded-Port": ["443"],
+		"X-Forwarded-Proto": ["https"]
+	},
+	"queryStringParameters": {
+		"tournament_id": "123"
+	},
+	"multiValueQueryStringParameters": {
+		"tournament_id": ["123"]
+	},
+	"pathParameters": null,
+	"stageVariables": {
+		"lambdaAlias": "TEST"
+	},
+	"requestContext": {
+		"resourceId": "4ljfdu",
+		"resourcePath": "/tourneymachine",
+		"httpMethod": "POST",
+		"extendedRequestId": "JTXpqHfCoAMFaCA=",
+		"requestTime": "13/Mar/2020:00:25:46 +0000",
+		"path": "/v2test/tourneymachine",
+		"accountId": "564748484972",
+		"protocol": "HTTP/1.1",
+		"stage": "TEST",
+		"domainPrefix": "api",
+		"requestTimeEpoch": 1584059146575,
+		"requestId": "a91f20e0-27df-4d00-b4e5-6ad381916260",
+		"identity": {
+			"cognitoIdentityPoolId": null,
+			"accountId": null,
+			"cognitoIdentityId": null,
+			"caller": null,
+			"sourceIp": "108.217.86.168",
+			"principalOrgId": null,
+			"accessKey": null,
+			"cognitoAuthenticationType": null,
+			"cognitoAuthenticationProvider": null,
+			"userArn": null,
+			"userAgent": "PostmanRuntime/7.23.0",
+			"user": null
+		},
+		"domainName": "api.tourneymaster.org",
+		"apiId": "noiyewfm5g"
+	},
+	"body": null,
+	"isBase64Encoded": false
+}

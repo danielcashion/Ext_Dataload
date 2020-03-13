@@ -1,0 +1,20 @@
+{
+	"Records": [
+		{
+			"messageId": "aa973966-405c-476b-8543-d53c30385393",
+			"receiptHandle": "AQEBtxqi+OFZgf9sK+02ksD/loXEQXv0dqFQzIX+DoPSk9Cki22R02d27jM9h0YCiNyXOoPHUPwMg/F5ek5p49Z8A/DpUqz+NEmCLlFtePdmqCF0rPmsaw6L0hMOqHo7Rs3rBEkQkwyK/vwzxDgdVdrELAqn2YqX9ALsA3S4+m0c5RNLuXHcjly5/tdNxCwVCpGcpyYzq1NuFevv1O0hey76phpch3Suow2hMxvZEPmIwI1BEIJndjcLTMBaSlm3Dy2Ix0uecVksKPZUCGxIAMWmTb3CMzKtMZ+CQigJxGaeuMWrv9MCEBvFMjjh7V15xlns8AKwHJk4zPLHnEfSF1zVO4HBtnh4KPTkIBXSDu7EwVctRWGa70mmkqnoxfsVMSnR",
+			"body": "{\"token\": \"eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiODA5ZmJhZGYtZWRmMy00N2MzLThiOWItNDNlZjdlNjA2NmUyIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODQwNTg5ODcsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODQwNjI1ODcsImlhdCI6MTU4NDA1ODk4NywiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.poVexIO1QUl5AWHX3_iiCehmsdiFNkMfknNPW80wDMa_ANQl35kKhQ5wwYk0Jk_sgp_xjwf_G9TZ8dZ9tQYoagbGsHfBtisyp_oGezbLAtW-Zg6UupJLwbp7Cnm3h6p_MGZn3rIBhqhtm_Sai_5NrQGtntji1Wp8dFtsCHzt5O8N9sNkXvgJLTjqaJyrVbbASvmViw7FoMOTPph2jGwe6GCXKOETspezK1B6_PRXhLrAhQ-HSeB6EFbH29W0gJzflLi75tdgAFIoNpN0MhFF9BDfdbIWhb9dsErTBvSPER3A6_kAv8_pO8URnY_cPZIDfnrAxbuxnSkD6GHAT7ITaQ\", \"tournament_id\": \"123\"}",
+			"attributes": {
+				"ApproximateReceiveCount": "1",
+				"SentTimestamp": "1584061163712",
+				"SenderId": "AROAYG7NCAFWPWD2ENYBD:TMDataLoad-add-job",
+				"ApproximateFirstReceiveTimestamp": "1584061173712"
+			},
+			"messageAttributes": {},
+			"md5OfBody": "f05f905edade64280bea77845259d1ef",
+			"eventSource": "aws:sqs",
+			"eventSourceARN": "arn:aws:sqs:us-east-1:564748484972:TMDataLoad",
+			"awsRegion": "us-east-1"
+		}
+	]
+}
