@@ -75,7 +75,7 @@ Resources:
       Code:
         ZipFile: 'import json'
       Runtime: python3.7
-      Timeout: 300
+      Timeout: 600
       MemorySize: 1024
 
   Permission:
