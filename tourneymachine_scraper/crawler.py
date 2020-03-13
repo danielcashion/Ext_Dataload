@@ -99,6 +99,8 @@ def scrape(event, context):
         global _job_id
         _job_id = event['job_id']
 
+    report_progress("Starting")
+
     _tournament_id = event.get('tid')
     _tournament_base_url = 'https://tourneymachine.com/Public/Results/Tournament.aspx?IDTournament'
 
@@ -115,11 +117,19 @@ def scrape(event, context):
     _message = 'Scraped {} games, {} pools, and {} locations across {} divisions for tournament {} ({}) in {} seconds'.format(
         len(_games), len(_pools), len(_locations), len(_divisions), _event[keys.name], _event[keys.tournament_id], _t_delta)
 
+    report_progress("Complete: " + _message)
+
     print(_message)
     return {
         'message': _message
     }
 
+def report_progress(status):
+    # Reporting progress to "system_jobs" table
+    requests.put(url="{}{}?job_id={}".format(keys.api_root, 'system_jobs', _job_id),
+                data=json.dumps({'job_id': _job_id, 'status': status}),
+                headers={'Content-Type': 'application/json',
+                        'Authorization': 'Bearer {}'.format(_access_token)})
 
 def get_xpath_info(target, xpath_str):
     _ = target.xpath(xpath_str) or ''
@@ -225,6 +235,7 @@ def get_tournament(response, **kwargs):
 def get_division_details(response, **kwargs):
     status = 'Extracting division {}'.format(kwargs[keys.tournament_division_name])
     print(status)
+    report_progress(status)
     
     # Reporting progress to "system_jobs" table
     # The following line should be a call to "push_to_api" but apparently it does not support arbitrary primary key
