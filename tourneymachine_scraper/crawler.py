@@ -441,5 +441,5 @@ def get_locations(response, **kwargs):
 
     return _locations
 
-def run():
-    scrape({'tid': 'h20190705131052863fcdd6f2ef3c542'}, None)
+# def run():
+scrape({'tid': 'h20190705131052863fcdd6f2ef3c542'}, None)
