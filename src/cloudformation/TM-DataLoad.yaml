@@ -75,16 +75,14 @@ Resources:
       Code:
         ZipFile: 'import json'
       Runtime: python3.7
-      Timeout: 300
+      Timeout: 600
       MemorySize: 1024
 
   Permission:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Sub
-        - '${funcName}'
-        - funcName: !GetAtt 'AddJobFunction.Arn'
+      FunctionName: !GetAtt AddJobFunction.Arn
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyApi}/*/*/*
 
@@ -152,7 +150,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub ${ProjectName}
-      VisibilityTimeout: 300
+      VisibilityTimeout: 600
 
   ProcessJobFunctionEventSourceMapping:
     Type: AWS::Lambda::EventSourceMapping

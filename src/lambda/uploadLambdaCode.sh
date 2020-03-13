@@ -22,7 +22,7 @@ cp ../../tourneymachine_scraper/crawler.py bin/process-job
 pushd bin/process-job
 docker run -v $(pwd):/outputs -it lambci/lambda:build-python3.7 \
 pip install lxml -t /outputs/
-chmod -R 755
+chmod -R 755 .
 zip -r ../process-job-code.zip .
 popd
 aws lambda update-function-code --function-name "TMDataLoad-process-job" --zip-file "fileb://bin/process-job-code.zip"
