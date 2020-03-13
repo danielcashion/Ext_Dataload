@@ -83,6 +83,7 @@ keys = Keys()
 #curr_date = datetime.utcnow()
 
 _access_token = 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiNDA5MmNiNjctZTk2My00YmU2LWI4NTctN2JjMzE3ZGVlZDg4IiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODQwNjI2OTIsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODQwNjYyOTIsImlhdCI6MTU4NDA2MjY5MiwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.VNBwHHjcYHu4yeFtEAB0UYZAQ5aJw7FZwfUUX4izQ2-uYWFxbuyKCWYyPr7djGjy9syD0adxhCctMvu4qukepHfon440UYMnhRJZxw9a9_0V63jpk1bTsKI2RQzHVm_rk1IMbf-VuovN5AWD2ZR1ugLJZqHJQrfQ0uCGE81nRQIPOUwcdzEBYZqk2t6GnqZckSuoLfe4QMBx_d3cRWGHdKiT3j8gsrOGUcVGn6mztGge2IuzDNUXDW5_RRgwLv_Na5tmyXoqmRFrl3RHQZgt4QWG2uj7HRSbD96OFMEB6Wc9b8qrX1Uhgmnw26LEVGPbcaX8TquYGJekB4V9NL31pw'
+_job_id = ''
 
 _games = []
 _pools = []
@@ -95,6 +96,8 @@ def scrape(event, context):
         print('Using token from event["token"]: ', event['token'])
         global _access_token
         _access_token = event['token']
+        global _job_id
+        _job_id = event['job_id']
 
     _tournament_id = event.get('tid')
     _tournament_base_url = 'https://tourneymachine.com/Public/Results/Tournament.aspx?IDTournament'
@@ -220,7 +223,18 @@ def get_tournament(response, **kwargs):
 
 
 def get_division_details(response, **kwargs):
-    print('Extracting division {}'.format(kwargs[keys.tournament_division_name]))
+    status = 'Extracting division {}'.format(kwargs[keys.tournament_division_name])
+    print(status)
+    
+    # Reporting progress to "system_jobs" table
+    # The following line should be a call to "push_to_api" but apparently it does not support arbitrary primary key
+    # Hence duplication
+    
+    requests.put(url="{}{}?job_id={}".format(keys.api_root, 'system_jobs', _job_id),
+                data=json.dumps({'job_id': _job_id, 'status': status}),
+                headers={'Content-Type': 'application/json',
+                        'Authorization': 'Bearer {}'.format(_access_token)})
+
     tree = html.fromstring(response.content)
 
     kwargs[keys.response_content] = response.content
