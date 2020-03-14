@@ -16,7 +16,8 @@ class Keys:
     method = 'method'
     key = 'key'
     row_num = 'row_num'
-
+    pools = 'pools'
+    games = 'games'
 
     #tourneymachine_events
     customer_id = 'IDCustomer'
@@ -110,7 +111,7 @@ def scrape(event, context):
     _url = '{}={}'.format(_tournament_base_url, _tournament_id)
     response = requests.get(_url)
     _event, _divisions, _locations = get_tournament(response, **{keys.tournament_endpoint: _url,
-                                                              keys.tournament_id: _tournament_id})
+                                                                 keys.tournament_id: _tournament_id})
 
     _end = time.time()
     _t_delta = _end - _start
@@ -124,12 +125,14 @@ def scrape(event, context):
         'message': _message
     }
 
+
 def report_progress(status):
     # Reporting progress to "system_jobs" table
     requests.put(url="{}{}?job_id={}".format(keys.api_root, 'system_jobs', _job_id),
                 data=json.dumps({'job_id': _job_id, 'status': status}),
                 headers={'Content-Type': 'application/json',
                         'Authorization': 'Bearer {}'.format(_access_token)})
+
 
 def get_xpath_info(target, xpath_str):
     _ = target.xpath(xpath_str) or ''
@@ -188,6 +191,7 @@ def get_tournament(response, **kwargs):
     divisions = tree.xpath('//div[@class="col-xs-6 col-sm-3"]')
 
     _cur_event = json.loads(get_from_api('ext_events', {}, '{}={}'.format(keys.tournament_id, tournament_id)).content)
+    _current_pools, _current_games = {}, {}
 
     if _cur_event:
         _method = 'PUT'
@@ -204,6 +208,17 @@ def get_tournament(response, **kwargs):
             keys.response_content: response.content,
             keys.method: _method
     })
+
+    if _method == 'PUT':
+        _current_pools = get_from_api('ext_pools', {}, '{}={}'.format(keys.tournament_id, kwargs[keys.tournament_id]))
+        _current_pools = json.loads(_current_pools.content)
+        _current_pools = dict(((_[keys.tournament_id], _[keys.division_id], _[keys.team_id], _[keys.pool_description]), _[keys.row_num]) for _ in _current_pools)
+        _current_games = get_from_api('ext_games', {},
+                                      '{}={}'.format(keys.tournament_id, kwargs[keys.tournament_id]))
+        _current_games = json.loads(_current_games.content)
+        _current_games = dict(
+            ((_[keys.tournament_id], _[keys.tournament_division_id], _[keys.game_id]), _[keys.row_num]) for _ in
+            _current_games)
 
     for division in divisions:
         try:
@@ -226,7 +241,9 @@ def get_tournament(response, **kwargs):
             keys.last_update: last_update,
             keys.response_content: response.content,
             keys.locations: _locations,
-            keys.method: _method
+            keys.method: _method,
+            keys.pools: _current_pools,
+            keys.games: _current_games
         })
 
     return _event, divisions, _locations
@@ -304,12 +321,7 @@ def get_event(response, tournament_id, customer_id, method, **kwargs):
 
 def get_games(response, **kwargs):
     games = response.xpath('//tr[following-sibling::tr and preceding-sibling::thead and count(child::*)>2]')
-    _current_games = {}
-
-    if kwargs[keys.method] == 'PUT':
-        _current_games = get_from_api('ext_games', {}, '{}={}'.format(keys.tournament_id, kwargs[keys.tournament_id]))
-        _current_games = json.loads(_current_games.content)
-        _current_games = dict(((_[keys.tournament_id], _[keys.tournament_division_id], _[keys.game_id]), _[keys.row_num]) for _ in _current_games)
+    _current_games = kwargs.get(keys.games)
 
     if games:
         for game in games:
@@ -372,12 +384,7 @@ def get_games(response, **kwargs):
 
 def get_pools(response, **kwargs):
     pools = response.xpath('//table[contains(@class, "table table-bordered table-striped tournamentResultsTable")]')
-    _current_pools = {}
-
-    if kwargs[keys.method] == 'PUT':
-        _current_pools = get_from_api('ext_pools', {}, '{}={}'.format(keys.tournament_id, kwargs[keys.tournament_id]))
-        _current_pools = json.loads(_current_pools.content)
-        _current_pools = dict(((_[keys.tournament_id], _[keys.division_id], _[keys.team_id], _[keys.pool_description]), _[keys.row_num]) for _ in _current_pools)
+    _current_pools = kwargs.get(keys.pools)
 
     for pool in pools:
         _pool_id = pool.xpath('.//thead/tr/th/text()')[0].strip()
