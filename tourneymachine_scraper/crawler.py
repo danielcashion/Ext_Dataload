@@ -12,15 +12,37 @@ from requests import HTTPError
 
 class Keys:
     api_root = 'https://api.tourneymaster.org/v2/'
+    base_url = 'https://tourneymachine.com/Public/Results/Tournament.aspx?IDTournament'
     response_content = 'response_content'
     method = 'method'
     key = 'key'
     row_num = 'row_num'
     pools = 'pools'
     games = 'games'
+    job_id = 'job_id'
+    access_token = 'access_token'
+    token = 'token'
+    tid = 'tid'
+    message = 'message'
+    POST = 'POST'
+    PUT = 'PUT'
+    insert_id = 'insertId'
+    start_time = 'start_time'
+    step_comments = 'step_comments'
+    job_detail_id = 'job_detail_id'
+    current_step = 'current_step'
+
+    system_jobs = 'system_jobs'
+    is_complete = 'is_complete_YN'
+
+    system_jobs_details = 'system_jobs_details'
+    step_description = 'step_description'
+    step_id = 'step_id'
+
 
     #tourneymachine_events
     customer_id = 'IDCustomer'
+    events_tablename = 'ext_events'
     location_dictionary = 'location_dictionary'
     status = 'status'
     name = 'name'
@@ -30,8 +52,11 @@ class Keys:
     display_location = 'DisplayLocation'
     is_active_yn = 'is_active_YN'
     logo_url = 'logo_url'
+    debug = 'debug'
+
 
     #tourneymachine_pools
+    pools_tablename = 'ext_pools'
     division_id = 'IDDivision'
     pool_description = 'pool_description'
     team_id = 'IDTeam'
@@ -39,6 +64,7 @@ class Keys:
     # tourneymachine_game_data
     tournament_id = 'IDTournament'
     game_id = 'IDGame'
+    games_tablename = 'ext_games'
     complex_id = 'IDComplex'
     tournament_endpoint = 'tournament_endpoint'
     tournament_name = 'tournament_name'
@@ -59,6 +85,7 @@ class Keys:
 
     # tourneymachine_locations
     locations_name = 'Name'
+    locations_tablename = 'ext_locations'
     address = 'Address'
     city = 'City'
     state = 'State'
@@ -72,66 +99,113 @@ class Keys:
 
     locations = 'locations'
 
+
+step_descriptions = {
+    1: 'Loading event info',
+    2: 'Loading locations',
+    3: 'Loading division ',
+    4: 'Loading games | division ',
+    5: 'Loading pools | division ',
+}
+
+
 class APIError(Exception):
     pass
+
 
 class ScrapeError(Exception):
     pass
 
+
 keys = Keys()
-
-
-#curr_date = datetime.utcnow()
-
-_access_token = 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiNDA5MmNiNjctZTk2My00YmU2LWI4NTctN2JjMzE3ZGVlZDg4IiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODQwNjI2OTIsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODQwNjYyOTIsImlhdCI6MTU4NDA2MjY5MiwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.VNBwHHjcYHu4yeFtEAB0UYZAQ5aJw7FZwfUUX4izQ2-uYWFxbuyKCWYyPr7djGjy9syD0adxhCctMvu4qukepHfon440UYMnhRJZxw9a9_0V63jpk1bTsKI2RQzHVm_rk1IMbf-VuovN5AWD2ZR1ugLJZqHJQrfQ0uCGE81nRQIPOUwcdzEBYZqk2t6GnqZckSuoLfe4QMBx_d3cRWGHdKiT3j8gsrOGUcVGn6mztGge2IuzDNUXDW5_RRgwLv_Na5tmyXoqmRFrl3RHQZgt4QWG2uj7HRSbD96OFMEB6Wc9b8qrX1Uhgmnw26LEVGPbcaX8TquYGJekB4V9NL31pw'
-_job_id = ''
 
 _games = []
 _pools = []
 
 
+def _start_step(description_details='', **kwargs):
+    kwargs[keys.start_time] = time.time()
+    _payload = {
+        keys.job_id: kwargs.get(keys.job_id),
+        keys.step_description: step_descriptions[kwargs.get(keys.current_step)] + description_details,
+        keys.step_id: kwargs.get(keys.current_step),
+        keys.is_active_yn: 1,
+    }
+    kwargs[keys.step_id] = push_to_api(keys.system_jobs_details, _payload, **kwargs).json()[keys.insert_id]
+
+    return kwargs
+
+
+def _finish_step(**kwargs):
+    _end = time.time()
+    _job_details_payload = {
+        keys.job_id: kwargs.get(keys.job_id),
+        keys.is_active_yn: 0,
+        keys.step_comments: 'Completed in {0:.2f} seconds'.format(_end - kwargs.get(keys.start_time))
+    }
+    push_to_api(keys.system_jobs_details, _job_details_payload, f'?{keys.job_detail_id}={kwargs.get(keys.step_id)}',
+                **kwargs)
+
+
 def scrape(event, context):
     _start = time.time()
-    # Get access token if available
-    if 'token' in event.keys():
-        print('Using token from event["token"]: ', event['token'])
-        global _access_token
-        _access_token = event['token']
-        global _job_id
-        _job_id = event['job_id']
-
-    report_progress("Starting")
-
-    _tournament_id = event.get('tid')
-    _tournament_base_url = 'https://tourneymachine.com/Public/Results/Tournament.aspx?IDTournament'
+    _debug = event.get(keys.debug)
+    _tournament_id = event.get(keys.tid)
 
     if not _tournament_id:
         raise KeyError('Missing tournament id (tid) command line arguement')
 
-    _url = '{}={}'.format(_tournament_base_url, _tournament_id)
+    _url = '{}={}'.format(keys.base_url, _tournament_id)
+    _params = {
+        keys.tournament_endpoint: _url,
+        keys.tournament_id: _tournament_id,
+        keys.job_id: event.get(keys.job_id),
+        keys.access_token: event.get(keys.access_token),
+        keys.debug: _debug
+    }
+
+    _payload = {keys.job_id: _params.get(keys.job_id), keys.status: 'Running'}
+    push_to_api(keys.system_jobs, _payload, f'?{keys.job_id}={_params.get(keys.job_id)}', **_params)
+
     response = requests.get(_url)
-    _event, _divisions, _locations = get_tournament(response, **{keys.tournament_endpoint: _url,
-                                                                 keys.tournament_id: _tournament_id})
+    try:
+        _event, _divisions, _locations = get_tournament(response, **_params)
+    except ScrapeError as e:
+        print(e)
+        return
 
     _end = time.time()
     _t_delta = _end - _start
     _message = 'Scraped {} games, {} pools, and {} locations across {} divisions for tournament {} ({}) in {} seconds'.format(
         len(_games), len(_pools), len(_locations), len(_divisions), _event[keys.name], _event[keys.tournament_id], _t_delta)
 
-    report_progress("Complete: " + _message)
-
-    print(_message)
-    return {
-        'message': _message
+    _payload = {
+        keys.job_id: _params.get(keys.job_id),
+        keys.status: _message,
+        keys.is_active_yn: 0,
+        keys.is_complete: 1,
     }
+    push_to_api(keys.system_jobs, _payload, f'?{keys.job_id}={_params.get(keys.job_id)}', **_params)
+
+    if _debug:
+        print(_message)
+
+    return {keys.message: _message}
 
 
-def report_progress(status):
-    # Reporting progress to "system_jobs" table
-    requests.put(url="{}{}?job_id={}".format(keys.api_root, 'system_jobs', _job_id),
-                data=json.dumps({'job_id': _job_id, 'status': status}),
-                headers={'Content-Type': 'application/json',
-                        'Authorization': 'Bearer {}'.format(_access_token)})
+def _valid_tournament(response, **kwargs):
+    if re.search('com/Error', response.url):
+        _payload = {
+            keys.job_id: kwargs.get(keys.job_id),
+            keys.status: 'Error: Invalid tournament ID',
+            keys.is_active_yn: False,
+            keys.is_complete: False,
+        }
+
+        push_to_api(keys.system_jobs, _payload, f'?{keys.job_id}={kwargs.get(keys.job_id)}', **kwargs)
+        return False
+
+    return True
 
 
 def get_xpath_info(target, xpath_str):
@@ -142,13 +216,16 @@ def get_xpath_info(target, xpath_str):
         return _.strip()
 
 
-def get_from_api(endpoint, payload, search_params):
-    try:
+def _get_header(token):
+    return {'Content-Type': 'application/json',
+            'Authorization': f'Bearer {token}'}
 
-        response = requests.get(url="{}{}?{}".format(keys.api_root, endpoint, search_params),
+
+def get_from_api(endpoint, payload, search_params, **kwargs):
+    try:
+        response = requests.get(url=f"{keys.api_root}{endpoint}?{search_params}",
                                 data=json.dumps(payload),
-                                headers={'Content-Type': 'application/json',
-                                         'Authorization': 'Bearer {}'.format(_access_token)})
+                                headers=_get_header(kwargs.get(keys.access_token)))
 
         response.raise_for_status()
 
@@ -160,18 +237,16 @@ def get_from_api(endpoint, payload, search_params):
         return response
 
 
-def push_to_api(endpoint, payload, method='POST', **kwargs):
+def push_to_api(endpoint, payload, params='', **kwargs):
     try:
-        if method == 'POST':
-            response = requests.post(url="{}{}".format(keys.api_root, endpoint),
-                             data=json.dumps(payload),
-                             headers={'Content-Type': 'application/json',
-                                      'Authorization': 'Bearer {}'.format(_access_token)})
-        else:
-            response = requests.put(url="{}{}?row_num={}".format(keys.api_root, endpoint, kwargs[keys.key]),
-                                    data=json.dumps(payload),
-                                    headers={'Content-Type': 'application/json',
-                                             'Authorization': 'Bearer {}'.format(_access_token)})
+        _func = requests.post if not params else requests.put
+        response = _func(url=f"{keys.api_root}{endpoint}{params}",
+                         data=json.dumps(payload),
+                         headers=_get_header(kwargs.get(keys.access_token)))
+
+        if kwargs.get(keys.debug):
+            print(response.json())
+
         response.raise_for_status()
 
     except HTTPError as http_err:
@@ -183,38 +258,37 @@ def push_to_api(endpoint, payload, method='POST', **kwargs):
 
 
 def get_tournament(response, **kwargs):
-    tournament_endpoint = kwargs.get(keys.tournament_endpoint)
     tournament_id = kwargs.get(keys.tournament_id)
     tree = html.fromstring(response.content)
+    if not _valid_tournament(response, **kwargs):
+        raise ScrapeError(f"Bad {keys.tournament_id}")
 
     customer_id = tree.xpath('//img[@class="tournamentLogo img-thumbnail img-responsive"]')[0].attrib.get('src').split('/')[4]
     divisions = tree.xpath('//div[@class="col-xs-6 col-sm-3"]')
 
-    _cur_event = json.loads(get_from_api('ext_events', {}, '{}={}'.format(keys.tournament_id, tournament_id)).content)
+    _cur_event = json.loads(get_from_api('ext_events', {}, '{}={}'.format(keys.tournament_id, tournament_id), **kwargs).content)
     _current_pools, _current_games = {}, {}
 
+    kwargs[keys.customer_id] = customer_id
+    kwargs[keys.response_content] = response.content
+
     if _cur_event:
-        _method = 'PUT'
-        _event = get_event(tree, tournament_id, customer_id, 'PUT', **{keys.key: _cur_event[0][keys.row_num]})
-
+        kwargs[keys.method] = keys.PUT
+        kwargs[keys.key] = _cur_event[0][keys.row_num]
     else:
-        _method = 'POST'
-        _event = get_event(tree, tournament_id, customer_id, _method)
+        kwargs[keys.method] = keys.POST
 
-    _locations = get_locations(html.fromstring(response.content), **{
-            keys.tournament_endpoint: tournament_endpoint,
-            keys.tournament_id: tournament_id,
-            keys.customer_id: customer_id,
-            keys.response_content: response.content,
-            keys.method: _method
-    })
+    _event = get_event(tree, **kwargs)
 
-    if _method == 'PUT':
-        _current_pools = get_from_api('ext_pools', {}, '{}={}'.format(keys.tournament_id, kwargs[keys.tournament_id]))
+    kwargs[keys.locations] = get_locations(html.fromstring(response.content), **kwargs)
+
+    if kwargs[keys.method] == keys.PUT:
+        _search_params = f'{keys.tournament_id}={kwargs[keys.tournament_id]}'
+        _current_pools = get_from_api(keys.pools_tablename, {}, _search_params, **kwargs)
         _current_pools = json.loads(_current_pools.content)
-        _current_pools = dict(((_[keys.tournament_id], _[keys.division_id], _[keys.team_id], _[keys.pool_description]), _[keys.row_num]) for _ in _current_pools)
-        _current_games = get_from_api('ext_games', {},
-                                      '{}={}'.format(keys.tournament_id, kwargs[keys.tournament_id]))
+        _current_pools = dict(((_[keys.tournament_id], _[keys.division_id], _[keys.team_id], _[keys.pool_description]),
+                               _[keys.row_num]) for _ in _current_pools)
+        _current_games = get_from_api(keys.games_tablename, {}, _search_params, **kwargs)
         _current_games = json.loads(_current_games.content)
         _current_games = dict(
             ((_[keys.tournament_id], _[keys.tournament_division_id], _[keys.game_id]), _[keys.row_num]) for _ in
@@ -228,40 +302,31 @@ def get_tournament(response, **kwargs):
             last_update = ''
 
         _url = 'https://admin.tourneymachine.com/Public/Results/{}'.format(division.xpath('./a/@href')[0])
-        tournament_division_id = _url.split('IDDivision=')[-1]
-        tournament_division_name = get_xpath_info(division, './a/div/text()')
 
         response = requests.get(_url)
-        get_division_details(response, **{
-            keys.tournament_endpoint: tournament_endpoint,
-            keys.tournament_division_id: tournament_division_id,
-            keys.tournament_id: tournament_id,
-            keys.tournament_division_name: tournament_division_name,
-            keys.customer_id: customer_id,
-            keys.last_update: last_update,
-            keys.response_content: response.content,
-            keys.locations: _locations,
-            keys.method: _method,
-            keys.pools: _current_pools,
-            keys.games: _current_games
-        })
+        kwargs[keys.tournament_division_id] = _url.split('IDDivision=')[-1]
+        kwargs[keys.tournament_division_name] = get_xpath_info(division, './a/div/text()')
+        kwargs[keys.last_update] = last_update
+        kwargs[keys.response_content] = response.content
+        kwargs[keys.pools] = _current_pools
+        kwargs[keys.games] = _current_games
 
-    return _event, divisions, _locations
+        get_division_details(response, **kwargs)
+
+    return _event, divisions, kwargs[keys.locations]
 
 
 def get_division_details(response, **kwargs):
+    kwargs[keys.current_step] = 3
+    kwargs[keys.start_time] = time.time()
+    kwargs = _start_step(kwargs[keys.tournament_division_name], **kwargs)
+
     status = 'Extracting division {}'.format(kwargs[keys.tournament_division_name])
-    print(status)
-    report_progress(status)
-    
-    # Reporting progress to "system_jobs" table
-    # The following line should be a call to "push_to_api" but apparently it does not support arbitrary primary key
-    # Hence duplication
-    
-    requests.put(url="{}{}?job_id={}".format(keys.api_root, 'system_jobs', _job_id),
-                data=json.dumps({'job_id': _job_id, 'status': status}),
-                headers={'Content-Type': 'application/json',
-                        'Authorization': 'Bearer {}'.format(_access_token)})
+    if kwargs.get(keys.debug):
+        print(status)
+
+    _payload = {keys.job_id: kwargs.get(keys.job_id), keys.status: status}
+    push_to_api(keys.system_jobs, _payload, f'?{keys.job_id}={kwargs.get(keys.job_id)}', **kwargs)
 
     tree = html.fromstring(response.content)
 
@@ -272,12 +337,19 @@ def get_division_details(response, **kwargs):
 
     get_games(tree, **kwargs)
     get_pools(tree, **kwargs)
+    _finish_step(**kwargs)
 
     return _games, _pools
 
 
-def get_event(response, tournament_id, customer_id, method, **kwargs):
-    print('Extracting {} event'.format(tournament_id))
+def get_event(response, **kwargs):
+    kwargs[keys.current_step] = 1
+    kwargs[keys.start_time] = time.time()
+    kwargs = _start_step(**kwargs)
+
+    if kwargs.get(keys.debug):
+        print('Extracting {} event'.format(kwargs.get(keys.tournament_id)))
+
     time_period = get_xpath_info(response, 'normalize-space(//div[@class="tournamentDates"]/text())')
     location = get_xpath_info(response, 'normalize-space(//div[@class="tournamentLocation"]/text())')
 
@@ -303,8 +375,8 @@ def get_event(response, tournament_id, customer_id, method, **kwargs):
 
     # post event
     event_payload = {
-        keys.tournament_id: tournament_id,
-        keys.customer_id: customer_id,
+        keys.tournament_id: kwargs.get(keys.tournament_id),
+        keys.customer_id: kwargs.get(keys.customer_id),
         keys.location_dictionary: None,
         keys.status: None,
         keys.name: get_xpath_info(response, '//h1/a/text()'),
@@ -315,18 +387,27 @@ def get_event(response, tournament_id, customer_id, method, **kwargs):
         keys.is_active_yn: 1,
         keys.logo_url: logo_url
     }
-    push_to_api('ext_events', event_payload, method, **kwargs)
+
+    push_to_api(keys.events_tablename, event_payload, **kwargs)
+    _finish_step(**kwargs)
+
     return event_payload
 
 
 def get_games(response, **kwargs):
+    kwargs[keys.current_step] = 4
+    kwargs[keys.start_time] = time.time()
+    kwargs = _start_step(kwargs[keys.tournament_division_name], **kwargs)
+
     games = response.xpath('//tr[following-sibling::tr and preceding-sibling::thead and count(child::*)>2]')
     _current_games = kwargs.get(keys.games)
 
     if games:
         for game in games:
             game_id = get_xpath_info(game, './td[1]/text()')
-            print('Extracting {} game'.format(game_id))
+            if kwargs.get(keys.debug):
+                print('Extracting {} game'.format(game_id))
+
             if not game_id:
                 continue
 
@@ -378,11 +459,16 @@ def get_games(response, **kwargs):
                                        _game_payload[keys.tournament_division_id],
                                        _game_payload[keys.game_id]))
 
-            push_to_api('ext_games', _game_payload, kwargs[keys.method] if _key else 'POST', **{keys.key: _key})
+            push_to_api(keys.games_tablename, _game_payload, f'?row_num={_key}' if _key else '', **kwargs)
             _games.append(_game_payload)
+    _finish_step(**kwargs)
 
 
 def get_pools(response, **kwargs):
+    kwargs[keys.current_step] = 5
+    kwargs[keys.start_time] = time.time()
+    kwargs = _start_step(kwargs[keys.tournament_division_name], **kwargs)
+
     pools = response.xpath('//table[contains(@class, "table table-bordered table-striped tournamentResultsTable")]')
     _current_pools = kwargs.get(keys.pools)
 
@@ -400,16 +486,23 @@ def get_pools(response, **kwargs):
                                       _pool_payload.get(keys.tournament_division_id),
                                       _pool_payload.get(keys.team_id),
                                       _pool_payload.get(keys.pool_description)))
-            push_to_api('ext_pools', _pool_payload, kwargs[keys.method] if _key else 'POST', **{keys.key: _key})
+            push_to_api(keys.pools_tablename, _pool_payload, f'?row_num={kwargs[keys.key]}' if _key else '', **kwargs)
             _pools.append(_pool_payload)
+
+    _finish_step(**kwargs)
 
 
 def get_locations(response, **kwargs):
+    kwargs[keys.current_step] = 2
+    kwargs[keys.start_time] = time.time()
+    kwargs = _start_step(**kwargs)
+
     _locations = {}
     _curr_locations = {}
 
-    if kwargs[keys.method] == 'PUT':
-        _curr_locations = get_from_api('ext_locations', {}, '{}={}'.format(keys.tournament_id, kwargs[keys.tournament_id]))
+
+    if kwargs[keys.method] == keys.PUT:
+        _curr_locations = get_from_api('ext_locations', {}, '{}={}'.format(keys.tournament_id, kwargs[keys.tournament_id]), **kwargs)
         _curr_locations = json.loads(_curr_locations.content)
         _curr_locations = dict(((_[keys.tournament_id],_[keys.complex_id], _[keys.facility_id]), _[keys.row_num]) for _ in _curr_locations)
 
@@ -425,7 +518,9 @@ def get_locations(response, **kwargs):
 
         _id = _div_1.attrib['data-id']
         _name = _div_1.xpath('h4')[0].text
-        print('Extracting {} location'.format(_name))
+        if kwargs.get(keys.debug):
+            print('Extracting {} location'.format(_name))
+
         _lat = re.search(r"complex{}.lat = \\'(.+?)\\';".format(i), str(kwargs['response_content'])).groups()[0]
         _long = re.search(r"complex{}.long = \\'(.+?)\\';".format(i), str(kwargs['response_content'])).groups()[0]
 
@@ -463,17 +558,20 @@ def get_locations(response, **kwargs):
                 _key = _curr_locations.get((_location_payload[keys.tournament_id],
                                             _location_payload[keys.complex_id],
                                             _location_payload[keys.facility_id]))
-
-                r = push_to_api('ext_locations', _location_payload, kwargs[keys.method] if _key else 'POST',
-                                **{keys.key: _key})
+                push_to_api(keys.locations_tablename, _location_payload, f'?row_num={kwargs[keys.key]}' if _key else '', **kwargs)
         else:
             _locations[_name] = _id
             _key = _curr_locations.get((_location_payload[keys.tournament_id],_location_payload[keys.complex_id], None))
-            r = push_to_api('ext_locations', _location_payload, kwargs[keys.method] if _key else 'POST',
-                            **{keys.key: _key})
+            push_to_api(keys.locations_tablename, _location_payload,  f'?row_num={kwargs[keys.key]}' if _key else '', **kwargs)
 
+    _finish_step(**kwargs)
     return _locations
+
 
 # Do not run scrape if in Lambda
 if 'LAMBDA_TASK_ROOT' not in os.environ:
-    scrape({'tid': 'h20190705131052863fcdd6f2ef3c542'}, None)
+    scrape({keys.tid: 'h20190705131052863fcdd6f2ef3c542',
+            keys.debug: True,
+            keys.job_id: '12334567823',
+            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiZWY4M2JiMzgtOGNlZi00Y2YyLWExN2QtYjdhMjMyMDA1Mjg0IiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODQ2NTM0NjUsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODQ2NTcwNjUsImlhdCI6MTU4NDY1MzQ2NSwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.qwd8XO8pcOtci-P1aDSQXRdvYHwxQ9hVUJ12fNSD10ThjX5_OCHEL61x4ViJHwNGjZzcteZmIsN_iWmFwPgcT-RHC7SjDWID3cMYQkkhJ5B-kdh1T_uodKUR5a1LX4VieZxoNwU2fBosteTfXeG6FoThWdJbTQh-VK2lPCRcbGyB_0S2-9RBoEGqV_Cd0wdlSHWHv8b1l0jHkK5BvigQ7EPhiZkgz0szZ-WyKre4p1Hkh-wGxMu3zyGiLdOf9_ftv4SRSODIx-zQzCmGPu91oX_3SzXFrSRp8XJpkeFsXAPVSD_ZY1TwBx_oH2HjsXwj3PjIo81bavP4zd67t2-fIw'},
+           None)
