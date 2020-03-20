@@ -20,7 +20,7 @@ class Keys:
     pools = 'pools'
     games = 'games'
     job_id = 'job_id'
-    access_token = 'access_token'
+    access_token = 'token'
     token = 'token'
     tid = 'tid'
     message = 'message'
