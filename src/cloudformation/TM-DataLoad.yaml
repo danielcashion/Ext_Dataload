@@ -156,8 +156,6 @@ Resources:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
       BatchSize: 1
-      MaximumRetryAttempts: 0
-      MaximumRecordAgeInSeconds: 30
       Enabled: true
       EventSourceArn: !GetAtt Queue.Arn
       FunctionName: !GetAtt ProcessJobFunction.Arn
