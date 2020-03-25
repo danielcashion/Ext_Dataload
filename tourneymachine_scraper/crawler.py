@@ -312,6 +312,7 @@ def get_tournament(response, **kwargs):
         kwargs[keys.games] = _current_games
 
         get_division_details(response, **kwargs)
+        break
 
     return _event, divisions, kwargs[keys.locations]
 
@@ -364,14 +365,13 @@ def get_event(response, **kwargs):
         logo_url = ''
 
     try:
-        start_date = time_period.split('-')[0].strip()
+        _date = time_period.split('-')
+        start_date = _date[0].strip()
+        end_date = _date[1].strip()
     except Exception as e:
         start_date = ''
-
-    try:
-        end_date = time_period.split('-')[1].strip()
-    except Exception as e:
         end_date = ''
+
 
     # post event
     event_payload = {
@@ -490,11 +490,12 @@ def get_pools(response, **kwargs):
             _key = _current_pools.get((
                 _pool_payload[keys.job_id],
                 _pool_payload[keys.tournament_id],
-                _pool_payload.get(keys.tournament_division_id),
+                _pool_payload.get(keys.division_id),
                 _pool_payload.get(keys.team_id),
-                _pool_payload.get(keys.pool_description)))
+                _pool_payload.get(keys.pool_description),
+                ))
 
-            push_to_api(keys.pools_tablename, _pool_payload, f'?row_num={kwargs[keys.key]}' if _key else '', **kwargs)
+            push_to_api(keys.pools_tablename, _pool_payload, f'?row_num={_key}' if _key else '', **kwargs)
             _pools.append(_pool_payload)
 
     _finish_step(**kwargs)
@@ -580,8 +581,8 @@ def get_locations(response, **kwargs):
 
 # Do not run scrape if in Lambda
 if 'LAMBDA_TASK_ROOT' not in os.environ:
-    scrape({keys.tid: 'h20190705131052863fcdd6f2ef3c542',
+    scrape({keys.tid: 'h20190918180604528f35fc43bf78c42',
             keys.debug: True,
-            keys.job_id: '12334567823a12',
-            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiZDEwYTIwOGEtNDM3YS00MjJmLTg2ODItNWRjYTdmOTU1OGRjIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODUwOTc0MzUsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODUxMDEwMzUsImlhdCI6MTU4NTA5NzQzNSwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.rWsZn9RcIxLStYpvz_-WlZooiCL0FtQ54KRbltbm5g-4MeUJoXSog1oi5nQ_dkQNOePwuOuQhSvsvfg1GAf3LVOXpxB4gvZwO2OHz7KkUpJ7I6y_cNgSiv7z_mjv7tUmrzpxNVCNEE8MFX4dcE8zD3JyK-fWQL-Xv8uXm4PRZDW9OVeJZwAsNyWSfKpiWm2EP0tdN0FKXHnUAYUYr-qPUMex0hAsjZ3O-TXqjLCM41V1f1EEazOcGeoLLHTXLSJ94_0YAdJCrGh8SzKdRWIJZSI0Gk_qPUxUvsdwXl0XiNJhCQmAFykmnUs5Fqv_5UeMRZjjgyNVeLUGSBOA1jlEsQ'},
+            keys.job_id: '12334567823a129',
+            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiNTAyYTE0NmItOTQ4Ny00ODAxLTkyZDItNjI5ZGIyNmZhYTMwIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODUwOTk0MjAsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODUxMDMwMjAsImlhdCI6MTU4NTA5OTQyMCwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.t8zgACbnJ38mrRUqRCg-thH4sR7o7CRrtXOR4hkYYzAqOxwWIuxB5b4M4xPl063zHyOmjp3wMeVniqVMAnaSl8A2KXeyaHmZBmMRQptEGleAXV4jcvXeUx3rMwKyqMvLaUUq9FfHJo9YMOkTQ6Mz9DFipQT4Hal9d4_q5BDIs4BEdh6F5qh4qTbXGUEQiuGK0U7xEeWtDig_0ahOjy8c1rzn7SYJZ8bjsvfGk198j5xfm5L0hb4aTfxV53YDqacQM6WMl2dx0V6i76VK4d--lM5nJpyo0oAkgNSKswRibB3_0GT3BHCd4_2jmxuCGNp2hgiNgg_OsvNXAWHSbN_8DA'},
            None)
