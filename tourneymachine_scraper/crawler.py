@@ -312,7 +312,6 @@ def get_tournament(response, **kwargs):
         kwargs[keys.games] = _current_games
 
         get_division_details(response, **kwargs)
-        break
 
     return _event, divisions, kwargs[keys.locations]
 
@@ -368,6 +367,7 @@ def get_event(response, **kwargs):
         _date = time_period.split('-')
         start_date = _date[0].strip()
         end_date = _date[1].strip()
+
     except Exception as e:
         start_date = ''
         end_date = ''
@@ -583,6 +583,6 @@ def get_locations(response, **kwargs):
 if 'LAMBDA_TASK_ROOT' not in os.environ:
     scrape({keys.tid: 'h20190918180604528f35fc43bf78c42',
             keys.debug: True,
-            keys.job_id: '12334567823a129',
-            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiNTAyYTE0NmItOTQ4Ny00ODAxLTkyZDItNjI5ZGIyNmZhYTMwIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODUwOTk0MjAsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODUxMDMwMjAsImlhdCI6MTU4NTA5OTQyMCwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.t8zgACbnJ38mrRUqRCg-thH4sR7o7CRrtXOR4hkYYzAqOxwWIuxB5b4M4xPl063zHyOmjp3wMeVniqVMAnaSl8A2KXeyaHmZBmMRQptEGleAXV4jcvXeUx3rMwKyqMvLaUUq9FfHJo9YMOkTQ6Mz9DFipQT4Hal9d4_q5BDIs4BEdh6F5qh4qTbXGUEQiuGK0U7xEeWtDig_0ahOjy8c1rzn7SYJZ8bjsvfGk198j5xfm5L0hb4aTfxV53YDqacQM6WMl2dx0V6i76VK4d--lM5nJpyo0oAkgNSKswRibB3_0GT3BHCd4_2jmxuCGNp2hgiNgg_OsvNXAWHSbN_8DA'},
+            keys.job_id: '12334567823a130',
+            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiYjY0YmQ1YjgtYTY3NC00MTQ1LThmYzctNDAzZTE1NTU4NjYxIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODUxMDQ4NTYsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODUxMDg0NTYsImlhdCI6MTU4NTEwNDg1NiwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.mvz9bPuQFM3LIGILjAepJjHFrbEpMPK1P7SLsyPuRFqGRBrF4Ibonnb9kAlPtdInauTissKTE8yBf0i5KpTrh7T9pkzOWEkaNHVhLCUVzgzspf6lKUJt2JG5Md-0qhmukXhtQdnho9AzEDXrO1kenbAFTr_EHj6xNkINGivwU9S0aYXsvBPpQLt8Oqy2XCZrT1yDXVeD1ucraZkCF_xdfafD-cYPbYoDu0K95AQ1JtMy0TzcBKVnWvdv3eJS-vkk4EUJ7ZwqtXV8FVjuIcCxWBCj159tLWlsKa3iSQNd86XbTCXehn_ieH84t3dzOlpnYudp5hCkg-B5MIHegam-OQ'},
            None)
