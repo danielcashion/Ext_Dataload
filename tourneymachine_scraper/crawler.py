@@ -266,7 +266,7 @@ def get_tournament(response, **kwargs):
     customer_id = tree.xpath('//img[@class="tournamentLogo img-thumbnail img-responsive"]')[0].attrib.get('src').split('/')[4]
     divisions = tree.xpath('//div[@class="col-xs-6 col-sm-3"]')
 
-    _cur_event = json.loads(get_from_api('ext_events', {}, '{}={}'.format(keys.tournament_id, tournament_id), **kwargs).content)
+    _cur_event = json.loads(get_from_api('ext_events', {}, f'{keys.tournament_id}={tournament_id}&{keys.job_id}={kwargs.get(keys.job_id)}', **kwargs).content)
     _current_pools, _current_games = {}, {}
 
     kwargs[keys.customer_id] = customer_id
@@ -291,7 +291,7 @@ def get_tournament(response, **kwargs):
         _current_games = get_from_api(keys.games_tablename, {}, _search_params, **kwargs)
         _current_games = json.loads(_current_games.content)
         _current_games = dict(
-            (([keys.job_id], _[keys.tournament_id], _[keys.tournament_division_id], _[keys.game_id]), _[keys.row_num]) for _ in
+            ((_[keys.job_id], _[keys.tournament_id], _[keys.tournament_division_id], _[keys.game_id]), _[keys.row_num]) for _ in
             _current_games)
 
     for division in divisions:
@@ -388,8 +388,8 @@ def get_event(response, **kwargs):
         keys.is_active_yn: 1,
         keys.logo_url: logo_url
     }
-
-    push_to_api(keys.events_tablename, event_payload, **kwargs)
+    _key = kwargs.get(keys.key)
+    push_to_api(keys.events_tablename, event_payload, f'?row_num={_key}' if _key else '', **kwargs)
     _finish_step(**kwargs)
 
     return event_payload
@@ -582,6 +582,6 @@ def get_locations(response, **kwargs):
 if 'LAMBDA_TASK_ROOT' not in os.environ:
     scrape({keys.tid: 'h20190705131052863fcdd6f2ef3c542',
             keys.debug: True,
-            keys.job_id: '12334567823a',
-            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiZWY4M2JiMzgtOGNlZi00Y2YyLWExN2QtYjdhMjMyMDA1Mjg0IiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODQ2NTM0NjUsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODQ2NTcwNjUsImlhdCI6MTU4NDY1MzQ2NSwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.qwd8XO8pcOtci-P1aDSQXRdvYHwxQ9hVUJ12fNSD10ThjX5_OCHEL61x4ViJHwNGjZzcteZmIsN_iWmFwPgcT-RHC7SjDWID3cMYQkkhJ5B-kdh1T_uodKUR5a1LX4VieZxoNwU2fBosteTfXeG6FoThWdJbTQh-VK2lPCRcbGyB_0S2-9RBoEGqV_Cd0wdlSHWHv8b1l0jHkK5BvigQ7EPhiZkgz0szZ-WyKre4p1Hkh-wGxMu3zyGiLdOf9_ftv4SRSODIx-zQzCmGPu91oX_3SzXFrSRp8XJpkeFsXAPVSD_ZY1TwBx_oH2HjsXwj3PjIo81bavP4zd67t2-fIw'},
+            keys.job_id: '12334567823a12',
+            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiZDEwYTIwOGEtNDM3YS00MjJmLTg2ODItNWRjYTdmOTU1OGRjIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODUwOTc0MzUsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODUxMDEwMzUsImlhdCI6MTU4NTA5NzQzNSwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.rWsZn9RcIxLStYpvz_-WlZooiCL0FtQ54KRbltbm5g-4MeUJoXSog1oi5nQ_dkQNOePwuOuQhSvsvfg1GAf3LVOXpxB4gvZwO2OHz7KkUpJ7I6y_cNgSiv7z_mjv7tUmrzpxNVCNEE8MFX4dcE8zD3JyK-fWQL-Xv8uXm4PRZDW9OVeJZwAsNyWSfKpiWm2EP0tdN0FKXHnUAYUYr-qPUMex0hAsjZ3O-TXqjLCM41V1f1EEazOcGeoLLHTXLSJ94_0YAdJCrGh8SzKdRWIJZSI0Gk_qPUxUvsdwXl0XiNJhCQmAFykmnUs5Fqv_5UeMRZjjgyNVeLUGSBOA1jlEsQ'},
            None)
