@@ -122,6 +122,8 @@ keys = Keys()
 _games = []
 _pools = []
 
+_day_first_re = re.compile('\d')
+
 
 def _start_step(description_details='', **kwargs):
     kwargs[keys.start_time] = time.time()
@@ -258,7 +260,6 @@ def push_to_api(endpoint, payload, params='', **kwargs):
 
 
 def get_tournament(response, **kwargs):
-    tournament_id = kwargs.get(keys.tournament_id)
     tree = html.fromstring(response.content)
     if not _valid_tournament(response, **kwargs):
         raise ScrapeError(f"Bad {keys.tournament_id}")
@@ -266,33 +267,13 @@ def get_tournament(response, **kwargs):
     customer_id = tree.xpath('//img[@class="tournamentLogo img-thumbnail img-responsive"]')[0].attrib.get('src').split('/')[4]
     divisions = tree.xpath('//div[@class="col-xs-6 col-sm-3"]')
 
-    _cur_event = json.loads(get_from_api('ext_events', {}, f'{keys.tournament_id}={tournament_id}&{keys.job_id}={kwargs.get(keys.job_id)}', **kwargs).content)
-    _current_pools, _current_games = {}, {}
-
     kwargs[keys.customer_id] = customer_id
     kwargs[keys.response_content] = response.content
-
-    if _cur_event:
-        kwargs[keys.method] = keys.PUT
-        kwargs[keys.key] = _cur_event[0][keys.row_num]
-    else:
-        kwargs[keys.method] = keys.POST
+    kwargs[keys.method] = keys.POST
 
     _event = get_event(tree, **kwargs)
 
     kwargs[keys.locations] = get_locations(html.fromstring(response.content), **kwargs)
-
-    if kwargs[keys.method] == keys.PUT:
-        _search_params = f'{keys.tournament_id}={kwargs[keys.tournament_id]}'
-        _current_pools = get_from_api(keys.pools_tablename, {}, _search_params, **kwargs)
-        _current_pools = json.loads(_current_pools.content)
-        _current_pools = dict(((_[keys.job_id], _[keys.tournament_id], _[keys.division_id], _[keys.team_id], _[keys.pool_description]),
-                               _[keys.row_num]) for _ in _current_pools)
-        _current_games = get_from_api(keys.games_tablename, {}, _search_params, **kwargs)
-        _current_games = json.loads(_current_games.content)
-        _current_games = dict(
-            ((_[keys.job_id], _[keys.tournament_id], _[keys.tournament_division_id], _[keys.game_id]), _[keys.row_num]) for _ in
-            _current_games)
 
     for division in divisions:
         try:
@@ -308,8 +289,6 @@ def get_tournament(response, **kwargs):
         kwargs[keys.tournament_division_name] = get_xpath_info(division, './a/div/text()')
         kwargs[keys.last_update] = last_update
         kwargs[keys.response_content] = response.content
-        kwargs[keys.pools] = _current_pools
-        kwargs[keys.games] = _current_games
 
         get_division_details(response, **kwargs)
 
@@ -364,14 +343,27 @@ def get_event(response, **kwargs):
         logo_url = ''
 
     try:
+        #assumes time_period in one of two formats
+        # example 1: Jan 1 - Feb 1, 2020
+        # example 2: Jan 1 - 3, 2020
+
         _date = time_period.split('-')
-        start_date = _date[0].strip()
-        end_date = _date[1].strip()
+        _start_date = _date[0].strip()
+        _end_date = _date[1].strip()
+        _year = _end_date.split(',')[1].strip()
+
+        if _day_first_re.match(_end_date):
+            month = _start_date.split(' ')[0].strip()
+            end_day = _end_date.split(',')[0].strip()
+
+            start_date = f'{_start_date}, {_year}'
+            end_date = f'{month} {end_day}, {_year}'
+        else:
+            start_date = f'{_start_date}, {_year}'
 
     except Exception as e:
         start_date = ''
         end_date = ''
-
 
     # post event
     event_payload = {
@@ -388,8 +380,8 @@ def get_event(response, **kwargs):
         keys.is_active_yn: 1,
         keys.logo_url: logo_url
     }
-    _key = kwargs.get(keys.key)
-    push_to_api(keys.events_tablename, event_payload, f'?row_num={_key}' if _key else '', **kwargs)
+
+    push_to_api(keys.events_tablename, event_payload, **kwargs)
     _finish_step(**kwargs)
 
     return event_payload
@@ -401,7 +393,6 @@ def get_games(response, **kwargs):
     kwargs = _start_step(kwargs[keys.tournament_division_name], **kwargs)
 
     games = response.xpath('//tr[following-sibling::tr and preceding-sibling::thead and count(child::*)>2]')
-    _current_games = kwargs.get(keys.games)
 
     if games:
         for game in games:
@@ -457,14 +448,10 @@ def get_games(response, **kwargs):
                 keys.away_score: get_xpath_info(game, './td[5]/text()'),
                 keys.home_score: get_xpath_info(game, './td[6]/text()'),
             }
-            _key = _current_games.get((
-                _game_payload[keys.job_id],
-                _game_payload[keys.tournament_id],
-                _game_payload[keys.tournament_division_id],
-                _game_payload[keys.game_id]))
 
-            push_to_api(keys.games_tablename, _game_payload, f'?row_num={_key}' if _key else '', **kwargs)
+            push_to_api(keys.games_tablename, _game_payload, **kwargs)
             _games.append(_game_payload)
+
     _finish_step(**kwargs)
 
 
@@ -474,7 +461,6 @@ def get_pools(response, **kwargs):
     kwargs = _start_step(kwargs[keys.tournament_division_name], **kwargs)
 
     pools = response.xpath('//table[contains(@class, "table table-bordered table-striped tournamentResultsTable")]')
-    _current_pools = kwargs.get(keys.pools)
 
     for pool in pools:
         _pool_id = pool.xpath('.//thead/tr/th/text()')[0].strip()
@@ -487,15 +473,8 @@ def get_pools(response, **kwargs):
                 keys.pool_description: _pool_id,
                 keys.team_id: team.split('IDTeam=')[1].strip()
             }
-            _key = _current_pools.get((
-                _pool_payload[keys.job_id],
-                _pool_payload[keys.tournament_id],
-                _pool_payload.get(keys.division_id),
-                _pool_payload.get(keys.team_id),
-                _pool_payload.get(keys.pool_description),
-                ))
 
-            push_to_api(keys.pools_tablename, _pool_payload, f'?row_num={_key}' if _key else '', **kwargs)
+            push_to_api(keys.pools_tablename, _pool_payload, **kwargs)
             _pools.append(_pool_payload)
 
     _finish_step(**kwargs)
@@ -508,11 +487,6 @@ def get_locations(response, **kwargs):
 
     _locations = {}
     _curr_locations = {}
-
-    if kwargs[keys.method] == keys.PUT:
-        _curr_locations = get_from_api('ext_locations', {}, '{}={}'.format(keys.tournament_id, kwargs[keys.tournament_id]), **kwargs)
-        _curr_locations = json.loads(_curr_locations.content)
-        _curr_locations = dict(((_[keys.job_id], _[keys.tournament_id],_[keys.complex_id], _[keys.facility_id]), _[keys.row_num]) for _ in _curr_locations)
 
     address_info = response.xpath('//div[@class="panel panel-default panel-places complexList"]/div/div')
 
@@ -564,16 +538,11 @@ def get_locations(response, **kwargs):
                 _facility_id = facility.text
                 _locations['{} - {}'.format(_name, _facility_id)] = _id
                 _location_payload[keys.facility_id] = _facility_id
-                _key = _curr_locations.get((
-                    _location_payload[keys.job_id],
-                    _location_payload[keys.tournament_id],
-                    _location_payload[keys.complex_id],
-                    _location_payload[keys.facility_id]))
-                push_to_api(keys.locations_tablename, _location_payload, f'?row_num={kwargs[keys.key]}' if _key else '', **kwargs)
+
+                push_to_api(keys.locations_tablename, _location_payload, **kwargs)
         else:
             _locations[_name] = _id
-            _key = _curr_locations.get((_location_payload[keys.job_id], _location_payload[keys.tournament_id],_location_payload[keys.complex_id], None))
-            push_to_api(keys.locations_tablename, _location_payload,  f'?row_num={kwargs[keys.key]}' if _key else '', **kwargs)
+            push_to_api(keys.locations_tablename, _location_payload, **kwargs)
 
     _finish_step(**kwargs)
     return _locations
@@ -583,6 +552,6 @@ def get_locations(response, **kwargs):
 if 'LAMBDA_TASK_ROOT' not in os.environ:
     scrape({keys.tid: 'h20190918180604528f35fc43bf78c42',
             keys.debug: True,
-            keys.job_id: '12334567823a130',
-            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiYjY0YmQ1YjgtYTY3NC00MTQ1LThmYzctNDAzZTE1NTU4NjYxIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODUxMDQ4NTYsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODUxMDg0NTYsImlhdCI6MTU4NTEwNDg1NiwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.mvz9bPuQFM3LIGILjAepJjHFrbEpMPK1P7SLsyPuRFqGRBrF4Ibonnb9kAlPtdInauTissKTE8yBf0i5KpTrh7T9pkzOWEkaNHVhLCUVzgzspf6lKUJt2JG5Md-0qhmukXhtQdnho9AzEDXrO1kenbAFTr_EHj6xNkINGivwU9S0aYXsvBPpQLt8Oqy2XCZrT1yDXVeD1ucraZkCF_xdfafD-cYPbYoDu0K95AQ1JtMy0TzcBKVnWvdv3eJS-vkk4EUJ7ZwqtXV8FVjuIcCxWBCj159tLWlsKa3iSQNd86XbTCXehn_ieH84t3dzOlpnYudp5hCkg-B5MIHegam-OQ'},
+            keys.job_id: '12334567823a1311a',
+            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiNzVmYTJlNWQtNTdmZi00NDk3LTg2ZjktZGMxYjdkMTdjNDg0IiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODUyMzQyMzUsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiJkYThiM2E5NS03ZjA4LTQzYjEtYmVkMS03MzM5OTczYjhiZWIiLCJleHAiOjE1ODUyMzc4MzUsImlhdCI6MTU4NTIzNDIzNSwiZW1haWwiOiJhcGlfZGVtb0B0b3VybmV5bWFzdGVyLm9yZyJ9.ipRg8jtpz7CTGWCw8denOcfP9QPXUlZ5TdM__NVaXgTbj2gbT0q2kMdaCWIW4GR4GL3RL_Nt38LRtyA-DfRa6ALrh1dSPPp2ujASuEjtJJB5SHXG-DbnzMex_Ve7v1kb2YND5EoDY-HKkQeFbYiApLOBauFmi94kxzk9kcsfoIE82vesW09dCKC6r7d2Yowr-96U9lw1mMe4zcD-udY9GjBZ4jCeu2a5l0Ekz5coE_ZSc5t5zdIYyixw21Jkw4_fpFxioLNxipYsFUkx78oELOqDE5BT5LJCCwIWMEGm3EBwttV1YRIL_5UdP9iUWw9j2cxG13gRV1HQzqKTeEljVQ'},
            None)
