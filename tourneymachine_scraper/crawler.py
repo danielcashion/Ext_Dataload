@@ -463,24 +463,24 @@ def get_pools(response, **kwargs):
     pools = response.xpath('//table[contains(@class, "table table-bordered table-striped tournamentResultsTable")]')
 
     for pool in pools:
-        try:
-            _pool_id = pool.xpath('.//thead/tr/th/text()')[0].strip()
-        except IndexError:
-            # no pool id
+        if len(pool.xpath('.//thead/tr/th/text()')) == 0:
+            print('skipping')
             continue
 
-            print('Extracting {} pool'.format(_pool_id))
-            for team in pool.xpath('./tbody/tr/td/a/@href'):
-                _pool_payload = {
-                    keys.job_id: kwargs.get(keys.job_id),
-                    keys.tournament_id: kwargs[keys.tournament_id],
-                    keys.division_id: kwargs[keys.tournament_division_id],
-                    keys.pool_description: _pool_id,
-                    keys.team_id: team.split('IDTeam=')[1].strip()
-                }
+        _pool_id = pool.xpath('.//thead/tr/th/text()')[0].strip()
 
-                push_to_api(keys.pools_tablename, _pool_payload, **kwargs)
-                _pools.append(_pool_payload)
+        print('Extracting {} pool'.format(_pool_id))
+        for team in pool.xpath('./tbody/tr/td/a/@href'):
+            _pool_payload = {
+                keys.job_id: kwargs.get(keys.job_id),
+                keys.tournament_id: kwargs[keys.tournament_id],
+                keys.division_id: kwargs[keys.tournament_division_id],
+                keys.pool_description: _pool_id,
+                keys.team_id: team.split('IDTeam=')[1].strip()
+            }
+
+            push_to_api(keys.pools_tablename, _pool_payload, **kwargs)
+            _pools.append(_pool_payload)
 
     _finish_step(**kwargs)
 
@@ -558,5 +558,5 @@ if 'LAMBDA_TASK_ROOT' not in os.environ:
     scrape({keys.tid: 'h201909181922263155a7efee773464f',
             keys.debug: True,
             keys.job_id: 'h201909181922263155a7efee773464f',
-            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIyNjE1M2UwMS03OWU0LTRhMGEtYmYzZC0xMmIzOTU2Zjk1NjYiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiZTQ4YWZmNzUtZTFlYi00NThlLWIzOTEtNjUyNzBmYmY3ZDZhIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODg2MTE4NzAsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiIyNjE1M2UwMS03OWU0LTRhMGEtYmYzZC0xMmIzOTU2Zjk1NjYiLCJleHAiOjE1ODg2MTU0NzAsImlhdCI6MTU4ODYxMTg3MCwiZW1haWwiOiJkYW5pZWwuY2FzaGlvbi5ueWNAZ21haWwuY29tIn0.RGv27PIeBkRSAErzN52HKlOT-XiCKUluK7y7vrqlybTuRlpFQPz28HDluYgkLIf-_Wcuj3Igw7k4i1w7sAimCRtahb-wQULj9ToPEzhUIRA4JEiaIywF8Gs6kX9jXx6-dvrtIAs9DcnGUKR1_WHKbOjcqbGb1H1MaIjay26Vk19PGRHNu-ekxmvo-C-NQKF-mQ-W1BbV863z9td93QcBeKXWLrBsz-mt1-R4IMGvHcncyBZGHpU-EtXJMWe6jvhOi44BqMOoz1Du6eBjOWDzfClPB2OBOlxg3TV3beyd0Hp39mNWX_UkUsUdKvwcFmi4JrT8U4E4lcoKbs6cK-WX-A'},
+            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIyNjE1M2UwMS03OWU0LTRhMGEtYmYzZC0xMmIzOTU2Zjk1NjYiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiYmViYTlmYTgtODFmMC00ZDRjLWI5NjYtZDU2NmEwZWU2MDQwIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODg2MTU2MzgsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiIyNjE1M2UwMS03OWU0LTRhMGEtYmYzZC0xMmIzOTU2Zjk1NjYiLCJleHAiOjE1ODg2MTkyMzgsImlhdCI6MTU4ODYxNTYzOCwiZW1haWwiOiJkYW5pZWwuY2FzaGlvbi5ueWNAZ21haWwuY29tIn0.Z5B_ZvKSjGUnWy1XzZiaPvRMkcblKIwBewWSgb_8zq8PVaQaQ6et2bdvswSIp5WFUXvIuq_NWh_08MLNQu6Na_51W01r2ViJ73Ii5Lp4EHwdtqMZvOg85kldxbEzEULhKwnCJmnXvqkinkboeJsEuPTbftvmw4zO2fLLIkErhR6Tuqg-nvB2E1jkrXtQvfzuL5lmdm7HaPLHuwnIoRBjtaMnnCNwMjGlRX-oMZBsZ0YrrcDjblELVA7gETxviGYGuuaY0lAR8_GRtOZwP-EqGIgEbl7rJVc6pQJZokMHDq-4LZyY2J8cjtNM6ITkSlDvPOrijeF3ZuZQd9esDBOO4A'},
            None)
