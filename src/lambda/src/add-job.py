@@ -25,7 +25,7 @@ def lambda_handler(event, context):
 		message['job_id'] = res['MessageId']
 
 		requests.post(url=system_jobs_url,
-									data=json.dumps({'job_id': message['job_id'], 'status': 'Started'}),
+									data=json.dumps({'job_id': message['job_id'], 'status': 'Started', 'parameters': json.dumps(message)}),
 									headers={'Content-Type': 'application/json',
 														'Authorization':'Bearer {}'.format(message['token'])}					
 									)
