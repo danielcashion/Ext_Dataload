@@ -11,7 +11,7 @@ from requests import HTTPError
 
 
 class Keys:
-    api_root = 'https://api.tourneymaster.org/v2/'
+    api_root = os.getenv('PRIVATE_API_BASE_URL')+'/'
     base_url = 'https://tourneymachine.com/Public/Results/Tournament.aspx?IDTournament'
     response_content = 'response_content'
     method = 'method'
@@ -39,8 +39,7 @@ class Keys:
     step_description = 'step_description'
     step_id = 'step_id'
 
-
-    #tourneymachine_events
+    # tourneymachine_events
     customer_id = 'IDCustomer'
     events_tablename = 'ext_events'
     location_dictionary = 'location_dictionary'
@@ -54,8 +53,7 @@ class Keys:
     logo_url = 'logo_url'
     debug = 'debug'
 
-
-    #tourneymachine_pools
+    # tourneymachine_pools
     pools_tablename = 'ext_pools'
     division_id = 'IDDivision'
     pool_description = 'pool_description'
@@ -133,7 +131,8 @@ def _start_step(description_details='', **kwargs):
         keys.step_id: kwargs.get(keys.current_step),
         keys.is_active_yn: 1,
     }
-    kwargs[keys.step_id] = push_to_api(keys.system_jobs_details, _payload, **kwargs).json()[keys.insert_id]
+    kwargs[keys.step_id] = push_to_api(
+        keys.system_jobs_details, _payload, **kwargs).json()[keys.insert_id]
 
     return kwargs
 
@@ -143,7 +142,8 @@ def _finish_step(**kwargs):
     _job_details_payload = {
         keys.job_id: kwargs.get(keys.job_id),
         keys.is_active_yn: 0,
-        keys.step_comments: 'Completed in {0:.2f} seconds'.format(_end - kwargs.get(keys.start_time))
+        keys.step_comments: 'Completed in {0:.2f} seconds'.format(
+            _end - kwargs.get(keys.start_time))
     }
     push_to_api(keys.system_jobs_details, _job_details_payload, f'?{keys.job_detail_id}={kwargs.get(keys.step_id)}',
                 **kwargs)
@@ -167,7 +167,8 @@ def scrape(event, context):
     }
 
     _payload = {keys.job_id: _params.get(keys.job_id), keys.status: 'Running'}
-    push_to_api(keys.system_jobs, _payload, f'?{keys.job_id}={_params.get(keys.job_id)}', **_params)
+    push_to_api(keys.system_jobs, _payload,
+                f'?{keys.job_id}={_params.get(keys.job_id)}', **_params)
 
     response = requests.get(_url)
     try:
@@ -187,7 +188,8 @@ def scrape(event, context):
         keys.is_active_yn: 0,
         keys.is_complete: 1,
     }
-    push_to_api(keys.system_jobs, _payload, f'?{keys.job_id}={_params.get(keys.job_id)}', **_params)
+    push_to_api(keys.system_jobs, _payload,
+                f'?{keys.job_id}={_params.get(keys.job_id)}', **_params)
 
     if _debug:
         print(_message)
@@ -204,7 +206,8 @@ def _valid_tournament(response, **kwargs):
             keys.is_complete: False,
         }
 
-        push_to_api(keys.system_jobs, _payload, f'?{keys.job_id}={kwargs.get(keys.job_id)}', **kwargs)
+        push_to_api(keys.system_jobs, _payload,
+                    f'?{keys.job_id}={kwargs.get(keys.job_id)}', **kwargs)
         return False
 
     return True
@@ -264,7 +267,8 @@ def get_tournament(response, **kwargs):
     if not _valid_tournament(response, **kwargs):
         raise ScrapeError(f"Bad {keys.tournament_id}")
 
-    customer_id = tree.xpath('//img[@class="tournamentLogo img-thumbnail img-responsive"]')[0].attrib.get('src').split('/')[4]
+    customer_id = tree.xpath(
+        '//img[@class="tournamentLogo img-thumbnail img-responsive"]')[0].attrib.get('src').split('/')[4]
     divisions = tree.xpath('//div[@class="col-xs-6 col-sm-3"]')
 
     kwargs[keys.customer_id] = customer_id
@@ -273,20 +277,24 @@ def get_tournament(response, **kwargs):
 
     _event = get_event(tree, **kwargs)
 
-    kwargs[keys.locations] = get_locations(html.fromstring(response.content), **kwargs)
+    kwargs[keys.locations] = get_locations(
+        html.fromstring(response.content), **kwargs)
 
     for division in divisions:
         try:
             last_update = division.xpath('./a/p/span/text()').extract()
-            last_update = ''.join(last_update).replace('Last Updated', '').strip()
+            last_update = ''.join(last_update).replace(
+                'Last Updated', '').strip()
         except Exception as e:
             last_update = ''
 
-        _url = 'https://admin.tourneymachine.com/Public/Results/{}'.format(division.xpath('./a/@href')[0])
+        _url = 'https://admin.tourneymachine.com/Public/Results/{}'.format(
+            division.xpath('./a/@href')[0])
 
         response = requests.get(_url)
         kwargs[keys.tournament_division_id] = _url.split('IDDivision=')[-1]
-        kwargs[keys.tournament_division_name] = get_xpath_info(division, './a/div/text()')
+        kwargs[keys.tournament_division_name] = get_xpath_info(
+            division, './a/div/text()')
         kwargs[keys.last_update] = last_update
         kwargs[keys.response_content] = response.content
 
@@ -300,19 +308,23 @@ def get_division_details(response, **kwargs):
     kwargs[keys.start_time] = time.time()
     kwargs = _start_step(kwargs[keys.tournament_division_name], **kwargs)
 
-    status = 'Extracting division {}'.format(kwargs[keys.tournament_division_name])
+    status = 'Extracting division {}'.format(
+        kwargs[keys.tournament_division_name])
     if kwargs.get(keys.debug):
         print(status)
 
     _payload = {keys.job_id: kwargs.get(keys.job_id), keys.status: status}
-    push_to_api(keys.system_jobs, _payload, f'?{keys.job_id}={kwargs.get(keys.job_id)}', **kwargs)
+    push_to_api(keys.system_jobs, _payload,
+                f'?{keys.job_id}={kwargs.get(keys.job_id)}', **kwargs)
 
     tree = html.fromstring(response.content)
 
     kwargs[keys.response_content] = response.content
     kwargs[keys.tournament_name] = get_xpath_info(tree, '//h1/a/text()')
-    kwargs[keys.time_period] = get_xpath_info(tree, 'normalize-space(//div[@class="tournamentDates"]/text())')
-    kwargs[keys.location_id] = get_xpath_info(tree, 'normalize-space(//div[@class="tournamentLocation"]/text())')
+    kwargs[keys.time_period] = get_xpath_info(
+        tree, 'normalize-space(//div[@class="tournamentDates"]/text())')
+    kwargs[keys.location_id] = get_xpath_info(
+        tree, 'normalize-space(//div[@class="tournamentLocation"]/text())')
 
     get_games(tree, **kwargs)
     get_pools(tree, **kwargs)
@@ -329,21 +341,25 @@ def get_event(response, **kwargs):
     if kwargs.get(keys.debug):
         print('Extracting {} event'.format(kwargs.get(keys.tournament_id)))
 
-    time_period = get_xpath_info(response, 'normalize-space(//div[@class="tournamentDates"]/text())')
-    location = get_xpath_info(response, 'normalize-space(//div[@class="tournamentLocation"]/text())')
+    time_period = get_xpath_info(
+        response, 'normalize-space(//div[@class="tournamentDates"]/text())')
+    location = get_xpath_info(
+        response, 'normalize-space(//div[@class="tournamentLocation"]/text())')
 
     try:
-        sport = response.xpath('//div[@id="tournamentSport"]/div/text()')[1].strip()
+        sport = response.xpath(
+            '//div[@id="tournamentSport"]/div/text()')[1].strip()
     except Exception as e:
         sport = ''
 
     try:
-        logo_url = response.xpath('//img[@class="tournamentLogo img-thumbnail img-responsive"]')[0].attrib['src']
+        logo_url = response.xpath(
+            '//img[@class="tournamentLogo img-thumbnail img-responsive"]')[0].attrib['src']
     except Exception as e:
         logo_url = ''
 
     try:
-        #assumes time_period in one of two formats
+        # assumes time_period in one of two formats
         # example 1: Jan 1 - Feb 1, 2020
         # example 2: Jan 1 - 3, 2020
 
@@ -392,7 +408,8 @@ def get_games(response, **kwargs):
     kwargs[keys.start_time] = time.time()
     kwargs = _start_step(kwargs[keys.tournament_division_name], **kwargs)
 
-    games = response.xpath('//tr[following-sibling::tr and preceding-sibling::thead and count(child::*)>2]')
+    games = response.xpath(
+        '//tr[following-sibling::tr and preceding-sibling::thead and count(child::*)>2]')
 
     if games:
         for game in games:
@@ -425,7 +442,8 @@ def get_games(response, **kwargs):
                 away_team_id = ''
                 home_team_id = ''
 
-            _location_name = get_xpath_info(game, 'normalize-space(./td[3]/text())').replace('\r', '')
+            _location_name = get_xpath_info(
+                game, 'normalize-space(./td[3]/text())').replace('\r', '')
             _game_payload = {
                 keys.tournament_id: kwargs[keys.tournament_id],
                 keys.job_id: kwargs[keys.job_id],
@@ -460,7 +478,8 @@ def get_pools(response, **kwargs):
     kwargs[keys.start_time] = time.time()
     kwargs = _start_step(kwargs[keys.tournament_division_name], **kwargs)
 
-    pools = response.xpath('//table[contains(@class, "table table-bordered table-striped tournamentResultsTable")]')
+    pools = response.xpath(
+        '//table[contains(@class, "table table-bordered table-striped tournamentResultsTable")]')
 
     for pool in pools:
         if len(pool.xpath('.//thead/tr/th/text()')) == 0:
@@ -493,7 +512,8 @@ def get_locations(response, **kwargs):
     _locations = {}
     _curr_locations = {}
 
-    address_info = response.xpath('//div[@class="panel panel-default panel-places complexList"]/div/div')
+    address_info = response.xpath(
+        '//div[@class="panel panel-default panel-places complexList"]/div/div')
 
     _tmp = 0
 
@@ -508,8 +528,10 @@ def get_locations(response, **kwargs):
         if kwargs.get(keys.debug):
             print('Extracting {} location'.format(_name))
 
-        _lat = re.search(r"complex{}.lat = \\'(.+?)\\';".format(i), str(kwargs['response_content'])).groups()[0]
-        _long = re.search(r"complex{}.long = \\'(.+?)\\';".format(i), str(kwargs['response_content'])).groups()[0]
+        _lat = re.search(r"complex{}.lat = \\'(.+?)\\';".format(i),
+                         str(kwargs['response_content'])).groups()[0]
+        _long = re.search(r"complex{}.long = \\'(.+?)\\';".format(i),
+                          str(kwargs['response_content'])).groups()[0]
 
         try:
             # this may need to be tweaked for new data. Assumes all addresses will have same format
@@ -544,7 +566,8 @@ def get_locations(response, **kwargs):
                 _locations['{} - {}'.format(_name, _facility_id)] = _id
                 _location_payload[keys.facility_id] = _facility_id
 
-                push_to_api(keys.locations_tablename, _location_payload, **kwargs)
+                push_to_api(keys.locations_tablename,
+                            _location_payload, **kwargs)
         else:
             _locations[_name] = _id
             push_to_api(keys.locations_tablename, _location_payload, **kwargs)
