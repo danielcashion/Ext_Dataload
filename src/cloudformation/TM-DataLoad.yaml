@@ -151,8 +151,6 @@ Resources:
         Type: MOCK
       MethodResponses:
         - StatusCode: 200
-          ResponseModels:
-            application/json: "Empty"
           ResponseParameters:
             method.response.header.Access-Control-Allow-Headers: false
             method.response.header.Access-Control-Allow-Methods: false
