@@ -11,17 +11,17 @@ Parameters:
 
   Authorizer:
     Type: String
-    Default: 123
+    Default: l11aoe
     Description: API Gateway Api ID
 
   MyApi:
     Type: String
-    Default: tq3hgdpac1
+    Default: 671u3k6s50
     Description: API Gateway Api ID
 
   RootResource:
     Type: String
-    Default: 2uz93cauvc
+    Default: o73p6lt4c6
     Description: API Gateway Root Resource ID
 
   ApiUrl:
