@@ -4,11 +4,6 @@
 # Date: 03/12/2020
 
 Parameters:
-  ProjectName:
-    Type: String
-    Default: TMDataLoad
-    Description: Name of the project to be used in naming everything else
-
   Authorizer:
     Type: String
     Default: l11aoe
@@ -33,7 +28,7 @@ Resources:
   LambdaExecRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub LambdaExecRole${ProjectName}
+      RoleName: !Sub LambdaExecRole${AWS::StackName}
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -61,12 +56,12 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: sqs:*
-                Resource: !Sub arn:aws:sqs:*:*:${ProjectName}*
+                Resource: !Sub arn:aws:sqs:*:*:${AWS::StackName}*
 
   AddJobFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub ${ProjectName}-add-job
+      FunctionName: !Sub ${AWS::StackName}-add-job
       Description: Adds a scrape job
       Handler: add-job.lambda_handler
       Role: !GetAtt LambdaExecRole.Arn
@@ -82,7 +77,7 @@ Resources:
   ProcessJobFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub ${ProjectName}-process-job
+      FunctionName: !Sub ${AWS::StackName}-process-job
       Description: Process a scrape job
       Handler: process-job.lambda_handler
       Role: !GetAtt LambdaExecRole.Arn
@@ -166,7 +161,7 @@ Resources:
   Queue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub ${ProjectName}
+      QueueName: !Sub ${AWS::StackName}
       VisibilityTimeout: 600
 
   ProcessJobFunctionEventSourceMapping:
