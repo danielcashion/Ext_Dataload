@@ -8,7 +8,7 @@ AWS_PROFILE=clubsports
 rm -Rf bin/*
 
 mkdir bin/add-job
-pip3 install --target ./bin/add-job requests
+pip3 install --target ./bin/add-job requests==2.28.2
 cp src/add-job.py bin/add-job
 pushd bin/add-job
 zip -r ../add-job-code.zip .
@@ -17,12 +17,11 @@ aws lambda update-function-code --function-name "TMDataLoadSTAGING-add-job" --zi
 aws lambda update-function-code --function-name "TMDataLoadPROD-add-job" --zip-file "fileb://bin/add-job-code.zip"
 
 mkdir bin/process-job
-pip3 install --target ./bin/process-job requests
-cp src/process-job.py bin/process-job
-cp ../../tourneymachine_scraper/crawler.py bin/process-job
+pip3 install --target ./bin/process-job requests==2.28.2
+cp ./src/lambda/src/process-job.py bin/process-job
+cp ./tourneymachine_scraper/crawler.py bin/process-job
 pushd bin/process-job
-docker run -v $(pwd):/outputs -it lambci/lambda:build-python3.7 \
-pip3 install lxml -t /outputs/
+
 chmod -R 755 .
 zip -r ../process-job-code.zip .
 popd
