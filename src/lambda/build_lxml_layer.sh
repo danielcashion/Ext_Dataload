@@ -5,7 +5,7 @@ virtualenv v-env
 source v-env/bin/activate
 
 # Install required packages
-pip install lxml
+pip install lxml==4.9.2
 
 # Deactivate virtualenv
 deactivate
