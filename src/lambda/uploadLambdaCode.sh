@@ -18,11 +18,10 @@ aws lambda update-function-code --function-name "TMDataLoadPROD-add-job" --zip-f
 
 mkdir bin/process-job
 pip3 install --target ./bin/process-job requests
-cp src/process-job.py bin/process-job
-cp ../../tourneymachine_scraper/crawler.py bin/process-job
+cp ./src/lambda/src/process-job.py bin/process-job
+cp ./tourneymachine_scraper/crawler.py bin/process-job
 pushd bin/process-job
-docker run -v $(pwd):/outputs -it lambci/lambda:build-python3.7 \
-pip3 install lxml -t /outputs/
+
 chmod -R 755 .
 zip -r ../process-job-code.zip .
 popd
