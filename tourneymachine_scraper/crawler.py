@@ -486,7 +486,7 @@ def get_pools(response, **kwargs):
             print('skipping')
             continue
 
-        _pool_id = pool.xpath('.//thead/tr/th/text()')[0].strip()
+        _pool_id = pool.xpath('.//table/thead/tr/th[@class="tournamentResultsTitle"]/text()')[0].strip()
 
         print('Extracting {} pool'.format(_pool_id))
         for team in pool.xpath('./tbody/tr/td/a/@href'):
