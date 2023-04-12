@@ -482,11 +482,11 @@ def get_pools(response, **kwargs):
         '//table[contains(@class, "table table-bordered table-striped tournamentResultsTable")]')
 
     for pool in pools:
-        if len(pool.xpath('.//thead/tr/th/text()')) == 0:
+        if len(pool.xpath('.//thead/tr[not(@class)]/th[@class="tournamentResultsTitle"]/text()')) == 0:
             print('skipping')
             continue
 
-        _pool_id = pool.xpath('.//thead/tr/th/text()')[0].strip()
+        _pool_id = pool.xpath('.//thead/tr[not(@class)]/th[@class="tournamentResultsTitle"]/text()')[0].strip()
 
         print('Extracting {} pool'.format(_pool_id))
         for team in pool.xpath('./tbody/tr/td/a/@href'):
