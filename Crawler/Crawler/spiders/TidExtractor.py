@@ -209,9 +209,9 @@ class TidExtractorSpider(scrapy.Spider):
                     keys.last_update: response.meta[keys.last_update],
                     keys.game_date: self.get_xpath_info(j, 'normalize-space(./preceding-sibling::thead[1]/tr[1]/th/text())'),
                     keys.game_time: game_time,
-                    keys.away_team_id: away_team_id,
+                    keys.away_team_id: home_team_id,  # D Cashion round that these were reversed 2023 06 27. The simplest way to address it is just to switch them in the payload.
                     keys.away_team_name: self.get_xpath_info(j, './td[4]/text()'),
-                    keys.home_team_id: home_team_id,
+                    keys.home_team_id: away_team_id,  # D Cashion round that these were reversed 2023 06 27. The simplest way to address it is just to switch them in the payload.
                     keys.home_team_name: self.get_xpath_info(j, './td[7]/text()'),
                     keys.away_score: self.get_xpath_info(j, './td[5]/text()'),
                     keys.home_score: self.get_xpath_info(j, './td[6]/text()'),
