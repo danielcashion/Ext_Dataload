@@ -11,7 +11,7 @@ from requests import HTTPError
 
 
 class Keys:
-    api_root = 'https://api.tourneymaster.org/privateprod/'
+    api_root = os.getenv('PRIVATE_API_BASE_URL')+'/'
     base_url = 'https://tourneymachine.com/Public/Results/Tournament.aspx?IDTournament'
     response_content = 'response_content'
     method = 'method'
@@ -444,8 +444,6 @@ def get_games(response, **kwargs):
 
             _location_name = get_xpath_info(
                 game, 'normalize-space(./td[3]/text())').replace('\r', '')
-            if _location_name == 'HARFORD CC':
-                _location_name = f'{_location_name} - Stadium Turf'
             _game_payload = {
                 keys.tournament_id: kwargs[keys.tournament_id],
                 keys.job_id: kwargs[keys.job_id],
