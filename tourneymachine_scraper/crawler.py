@@ -431,11 +431,11 @@ def get_games(response, **kwargs):
                 tmpt = game.xpath('./@class')[0].strip()
                 tmp_away_team_id = re.findall(r'\steam_(\w+)', tmpt)
                 try:
-                    home_team_id = tmp_away_team_id[0]
+                    home_team_id = tmp_away_team_id[1]
                 except IndexError:
                     home_team_id = ''
                 try:
-                    away_team_id = tmp_away_team_id[1]
+                    away_team_id = tmp_away_team_id[0]
                 except IndexError:
                     away_team_id = ''
             except Exception as e:
