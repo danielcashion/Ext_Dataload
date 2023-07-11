@@ -11,7 +11,7 @@ from requests import HTTPError
 
 
 class Keys:
-    api_root = os.getenv('PRIVATE_API_BASE_URL')+'/'
+    api_root = 'https://api.tourneymaster.org/privateprod/'
     base_url = 'https://tourneymachine.com/Public/Results/Tournament.aspx?IDTournament'
     response_content = 'response_content'
     method = 'method'
@@ -282,7 +282,7 @@ def get_tournament(response, **kwargs):
 
     for division in divisions:
         try:
-            last_update = division.xpath('./a/p/span/text()').extract()
+            last_update = division.xpath('./a/p/span/text()')
             last_update = ''.join(last_update).replace(
                 'Last Updated', '').strip()
         except Exception as e:
@@ -444,6 +444,8 @@ def get_games(response, **kwargs):
 
             _location_name = get_xpath_info(
                 game, 'normalize-space(./td[3]/text())').replace('\r', '')
+            if _location_name == 'HARFORD CC':
+                _location_name = f'{_location_name} - Stadium Turf'
             _game_payload = {
                 keys.tournament_id: kwargs[keys.tournament_id],
                 keys.job_id: kwargs[keys.job_id],
@@ -562,7 +564,7 @@ def get_locations(response, **kwargs):
             keys.job_id: kwargs.get(keys.job_id),
         }
 
-        if _facilities:
+        if _facilities and len(_facilities) > 1:
             for facility in _facilities:
                 _facility_id = facility.text
                 _locations['{} - {}'.format(_name, _facility_id)] = _id
@@ -580,8 +582,8 @@ def get_locations(response, **kwargs):
 
 # Do not run scrape if in Lambda
 if 'LAMBDA_TASK_ROOT' not in os.environ:
-    scrape({keys.tid: 'h201909181922263155a7efee773464f',
+    scrape({keys.tid: 'h202304241314455638094778d209648',
             keys.debug: True,
-            keys.job_id: 'h201909181922263155a7efee773464f',
-            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIyNjE1M2UwMS03OWU0LTRhMGEtYmYzZC0xMmIzOTU2Zjk1NjYiLCJhdWQiOiI0ZTZ1cThiNGYxZjRxNXFsOHFlMTBjcWZkYyIsImV2ZW50X2lkIjoiYmViYTlmYTgtODFmMC00ZDRjLWI5NjYtZDU2NmEwZWU2MDQwIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1ODg2MTU2MzgsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX0tDRkNjeHNmNCIsImNvZ25pdG86dXNlcm5hbWUiOiIyNjE1M2UwMS03OWU0LTRhMGEtYmYzZC0xMmIzOTU2Zjk1NjYiLCJleHAiOjE1ODg2MTkyMzgsImlhdCI6MTU4ODYxNTYzOCwiZW1haWwiOiJkYW5pZWwuY2FzaGlvbi5ueWNAZ21haWwuY29tIn0.Z5B_ZvKSjGUnWy1XzZiaPvRMkcblKIwBewWSgb_8zq8PVaQaQ6et2bdvswSIp5WFUXvIuq_NWh_08MLNQu6Na_51W01r2ViJ73Ii5Lp4EHwdtqMZvOg85kldxbEzEULhKwnCJmnXvqkinkboeJsEuPTbftvmw4zO2fLLIkErhR6Tuqg-nvB2E1jkrXtQvfzuL5lmdm7HaPLHuwnIoRBjtaMnnCNwMjGlRX-oMZBsZ0YrrcDjblELVA7gETxviGYGuuaY0lAR8_GRtOZwP-EqGIgEbl7rJVc6pQJZokMHDq-4LZyY2J8cjtNM6ITkSlDvPOrijeF3ZuZQd9esDBOO4A'},
+            keys.job_id: '490c0bc3-5270-47bb-b09e-f4b173711147',
+            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjYjQxOGIyMi1kNmY5LTQzNjgtYTNiNC1iN2ExNDUwMmY3YzEiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMS5hbWF6b25hd3MuY29tXC91cy1lYXN0LTFfS0NGQ2N4c2Y0IiwiY29nbml0bzp1c2VybmFtZSI6ImNiNDE4YjIyLWQ2ZjktNDM2OC1hM2I0LWI3YTE0NTAyZjdjMSIsImF1ZCI6IjRlNnVxOGI0ZjFmNHE1cWw4cWUxMGNxZmRjIiwiZXZlbnRfaWQiOiJiZmMwYWJjMy05NDE0LTQxNTktOGM0My1hMmYxNTU3NjM4MGEiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTY4OTA3Mzk2MywibmFtZSI6IkRhbmllbCBDYXNoaW9uIiwiZXhwIjoxNjg5MDc3NTYzLCJpYXQiOjE2ODkwNzM5NjMsImVtYWlsIjoiZGFuaWVsLmNhc2hpb25AY2x1YmxhY3Jvc3NlLm9yZyJ9.S4HkgPH6M3JId7-X_85EsM8po9QRi1OfUgi2ATTz327mYi_ArjQNM3IXSfvgvk-C1qPdFhC00o3E0uE6YdHYiV74OVbk8TnKRHyQc_R9g_4q1uF_-6r8WbLZZonddryBabb_k7LeD6-hNaGr2GH2FaD_DfsSbxXHWXB2gvTjY2rsj9Eix6zJSygpqZU-AiMNcQ4RTCcx_NHxEh-LQIv6nbCfX06iUzUBb2VUq6wr_FIAHiHlxwJRMwpON9cLYs76r_EE0aFffzl1ZautwXqRkfjIs9ZSY9MiHlIlreIBzJ3Vy8STRvCpmU8ddolsP1X_lWJcjOLbLztYZLoAzEzq2Q'},
            None)
