@@ -511,13 +511,11 @@ def get_locations(response, **kwargs):
     kwargs[keys.start_time] = time.time()
     kwargs = _start_step(**kwargs)
 
+    _tmp = 0
     _locations = {}
-    _curr_locations = {}
 
     address_info = response.xpath(
         '//div[@class="panel panel-default panel-places complexList"]/div/div')
-
-    _tmp = 0
 
     for i in range(0, int(len(address_info)/2)):
 
@@ -527,6 +525,8 @@ def get_locations(response, **kwargs):
 
         _id = _div_1.attrib['data-id']
         _name = _div_1.xpath('h4')[0].text
+        _name = ' '.join(_name.split())  # Remove extra spaces in locations names
+
         if kwargs.get(keys.debug):
             print('Extracting {} location'.format(_name))
 
