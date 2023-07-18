@@ -10,6 +10,11 @@ import json
 from requests import HTTPError
 
 
+if 'LAMBDA_TASK_ROOT' not in os.environ:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
 class Keys:
     api_root = os.getenv('PRIVATE_API_BASE_URL')+'/'
     base_url = 'https://tourneymachine.com/Public/Results/Tournament.aspx?IDTournament'
@@ -181,6 +186,13 @@ def scrape(event, context):
     _t_delta = _end - _start
     _message = 'Scraped {} games, {} pools, and {} locations across {} divisions for tournament {} ({}) in {} seconds'.format(
         len(_games), len(_pools), len(_locations), len(_divisions), _event[keys.name], _event[keys.tournament_id], _t_delta)
+    
+    if not len(_divisions):
+        print(f'No Divisions were found for event {_event[keys.name]} ({_event[keys.tournament_id]})')
+    if not len(_pools):
+        print(f'No Pools were found for event {_event[keys.name]} ({_event[keys.tournament_id]})')
+    if not len(_games):
+        print(f'No Games were found for event {_event[keys.name]} ({_event[keys.tournament_id]})')
 
     _payload = {
         keys.job_id: _params.get(keys.job_id),
@@ -585,8 +597,8 @@ def get_locations(response, **kwargs):
 
 # Do not run scrape if in Lambda
 if 'LAMBDA_TASK_ROOT' not in os.environ:
-    scrape({keys.tid: 'h20230524220653402d76a61fe32f547',
+    scrape({keys.tid: 'h2023060719432049090281baa627b4e',
             keys.debug: True,
             keys.job_id: '490c0bc3-5270-47bb-b09e-f4b173711147',
-            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjYjQxOGIyMi1kNmY5LTQzNjgtYTNiNC1iN2ExNDUwMmY3YzEiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMS5hbWF6b25hd3MuY29tXC91cy1lYXN0LTFfS0NGQ2N4c2Y0IiwiY29nbml0bzp1c2VybmFtZSI6ImNiNDE4YjIyLWQ2ZjktNDM2OC1hM2I0LWI3YTE0NTAyZjdjMSIsImF1ZCI6IjRlNnVxOGI0ZjFmNHE1cWw4cWUxMGNxZmRjIiwiZXZlbnRfaWQiOiJkMDZlMjc5OS02MmE4LTRlMmQtYjM5YS1iMTljMTA0MDJmN2QiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTY4OTE2MjkxNSwibmFtZSI6IkRhbmllbCBDYXNoaW9uIiwiZXhwIjoxNjg5MTY2NTE1LCJpYXQiOjE2ODkxNjI5MTUsImVtYWlsIjoiZGFuaWVsLmNhc2hpb25AY2x1YmxhY3Jvc3NlLm9yZyJ9.bO6qzRsbiHVr1wCfMky0v46KA-pxKVEAQkMo9kyeCdUbLjtyOuALBYtTBEWl0y3ULL7PEDSuXojHjc-ALwgSRr7i-5LKW3IHim8vIgeotyffHN5fQorie1_sLGoqTiFJuOu3gIAflJQD94xJ1FN-F3VDFAkGa62VpD42zjY0y6XmgNDnrUnBvO67fqFceMTWekKw30PT4ls04N3uKli9YPqXhbuIdVZ4VgKoo548_7Sc75aO9DT7ZxD-4GLZRwyufxVxjQhPKKpSZ6VzqICOnyNhaNBMWpTFXnb0Vwg9IIu4vg_UMV-pPUDpQgPK_053qSjeeHfUFUJKftZGZ2w2cA'},
+            keys.access_token: 'eyJraWQiOiIxU3lKYSsyRWZ5c3BvSWl1YkF5K0preTdEakNyMzRmT3I2NExsM1ZMZWJjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjYjQxOGIyMi1kNmY5LTQzNjgtYTNiNC1iN2ExNDUwMmY3YzEiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMS5hbWF6b25hd3MuY29tXC91cy1lYXN0LTFfS0NGQ2N4c2Y0IiwiY29nbml0bzp1c2VybmFtZSI6ImNiNDE4YjIyLWQ2ZjktNDM2OC1hM2I0LWI3YTE0NTAyZjdjMSIsImF1ZCI6IjRlNnVxOGI0ZjFmNHE1cWw4cWUxMGNxZmRjIiwiZXZlbnRfaWQiOiI1NDllMDA4My05MGFkLTRmNjEtYWMwZi0yMjZhYzQ5MWU5N2UiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTY4OTY3ODg2OCwibmFtZSI6IkRhbmllbCBDYXNoaW9uIiwiZXhwIjoxNjg5NjgyNDY4LCJpYXQiOjE2ODk2Nzg4NjgsImVtYWlsIjoiZGFuaWVsLmNhc2hpb25AY2x1YmxhY3Jvc3NlLm9yZyJ9.tgarmRdIjuDPlReEF_z-tWus2OE2YnyVLUGL8VvDTPEXyNIKBlw38BPwLO0YtlsbZ708RvbzVpKlXbTYK834b6jR1Oh4Fb63zuw2LpaihlzQhBM1PHe_SX5eUiysMhctxWHZ1o7R9eIlv-d2sizuN3RjRKUmthxxeMo-gzXNc10pZbyFJos4yc92pgFt8bejEmFVumCcDRfzcPT4lrfkzLR_OmdgCbGgjvL9v_csnAfanhhJ2g_hUUI0lXhriKfZgBi85zb-oluMtHdlKpxe_pHVe9fznFxwy50uKgXgMq4wxz3NWoT_uHm6d9idDS69SCgVwNiGgFiYQnsxXUtZoA'},
            None)
