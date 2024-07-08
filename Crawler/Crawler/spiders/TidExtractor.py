@@ -7,6 +7,11 @@ import json
 
 class Keys:
     api_root = 'https://api.tourneymaster.org/v2/'
+    
+    #current datetime in correct format
+    now = datetime.now()
+    current_datetime = now.strftime("%Y-%m-%d %H:%M:%S")
+    
 
     #tourneymachine_events
     customer_id = 'IDCustomer'
@@ -157,7 +162,8 @@ class TidExtractorSpider(scrapy.Spider):
             keys.end_date: end_date,
             keys.display_location: location,
             keys.is_active_yn: 1,
-            keys.logo_url: logo_url
+            keys.logo_url: logo_url,
+            keys.created_datetime : current_datetime
         })
 
         r = requests.post(url="https://api.tourneymaster.org/v2/ext_events", data=event_payload,
