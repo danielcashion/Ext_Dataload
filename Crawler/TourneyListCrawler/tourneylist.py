@@ -3,13 +3,14 @@ from datetime import datetime, timedelta
 import requests
 import json
 import pandas as pd
-
+import os
 
 # Define the year for which you want to retrieve data
 year = 2024  # Change this to the desired year
 
 #   DEFINE SPORTS
-sports = ["Baseball", "Basketball", "FieldHockey", "Football", "Hockey", "Lacrosse", "Soccer", "Softball", "Volleyball"]
+#sports = ["Baseball", "Basketball", "FieldHockey", "Football", "Hockey", "Lacrosse", "Soccer", "Softball", "Volleyball"]
+sports = ["Lacrosse"]
 # Set the base URL of your REST API
 base_url = "https://tourneymachine.com/Public/Service/json/TournamentSearch.aspx"
 
@@ -47,11 +48,22 @@ with open("result_set.json", "w") as json_file:
 
 print("Data retrieval and saving complete.")
 
-col_name = ["IDTournament", "Sport", "Location","StartDate"]
+col_name = ["IDTournament", "Name", "Sport","StartDate","EndDate", "Location"]
 num_events_per_sport = pd.DataFrame(columns = col_name)
+dataframe_file_name = "EventsDataFrame.csv"
+file_path = dataframe_file_name # Replace with your file name
+
+if os.path.exists(dataframe_file_name):
+    os.remove(dataframe_file_name)
 
 for k, v in result_set.items():
     # print(k, v["Sport"],v["DisplayLocation"])
-    num_events_per_sport.loc[len(num_events_per_sport)] = [k, v["Sport"],v["DisplayLocation"],v["StartDate"]]
+    num_events_per_sport.loc[len(num_events_per_sport)] = [k, v["Name"],v["Sport"],v["StartDate"], v["EndDate"],v["DisplayLocation"]]
+    # num_events_per_sport.loc[len(num_events_per_sport)] = [v["Name"],v["Sport"],v["StartDate"], v["EndDate"],v["DisplayLocation"]]
 
-print(num_events_per_sport)
+num_events_per_sport[['StartDate','EndDate']] = num_events_per_sport[['StartDate','EndDate']].apply(pd.to_datetime, format='%m/%d/%Y',errors='coerce')
+    
+num_events_per_sport = num_events_per_sport.sort_values(by=["StartDate"])
+num_events_per_sport.set_index(keys="IDTournament",inplace=True)
+
+num_events_per_sport.to_csv(dataframe_file_name, sep=",")
