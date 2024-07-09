@@ -6,7 +6,7 @@ import pandas as pd
 
 
 # Define the year for which you want to retrieve data
-year = 2023  # Change this to the desired year
+year = 2024  # Change this to the desired year
 
 #   DEFINE SPORTS
 sports = ["Baseball", "Basketball", "FieldHockey", "Football", "Hockey", "Lacrosse", "Soccer", "Softball", "Volleyball"]
