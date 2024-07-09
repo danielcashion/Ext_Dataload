@@ -8,9 +8,8 @@ import json
 class Keys:
     api_root = 'https://api.tourneymaster.org/v2/'
     
-    #current datetime in correct format
-    now = datetime.now()
-    current_datetime = now.strftime("%Y-%m-%d %H:%M:%S")
+    #current datetime 
+    created_datetime = 'created_datetime' 
     
 
     #tourneymachine_events
@@ -149,7 +148,13 @@ class TidExtractorSpider(scrapy.Spider):
             end_date = time_period.split('-')[1].strip()
         except Exception as e:
             end_date = ''
-
+            
+     #   try:
+            created_datetime = datetime.now()
+            created_datetime = created_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    #    except Exception as e:
+    #        created_datetme = ''
+            
         # post event
         event_payload = json.dumps({
             keys.tournament_id: tournament_id,
@@ -163,7 +168,7 @@ class TidExtractorSpider(scrapy.Spider):
             keys.display_location: location,
             keys.is_active_yn: 1,
             keys.logo_url: logo_url,
-            keys.created_datetime : current_datetime
+            keys.created_datetime : created_datetime
         })
 
         r = requests.post(url="https://api.tourneymaster.org/v2/ext_events", data=event_payload,
