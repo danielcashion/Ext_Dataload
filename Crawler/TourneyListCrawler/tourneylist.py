@@ -4,6 +4,9 @@ import requests
 import json
 import pandas as pd
 import os
+#   This script manually goes to tourneymachine and grabs every event it can. 
+#   Syntax to run is `python<3> tourneylist.py`
+
 
 # Define the year for which you want to retrieve data
 year = 2024  # Change this to the desired year
