@@ -36,6 +36,8 @@ DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
 CONCURRENT_REQUESTS_PER_DOMAIN = 1
 CONCURRENT_REQUESTS_PER_IP = 1
+# Scrapy 2.13+ only honors the per-IP limit with this queue
+SCHEDULER_PRIORITY_QUEUE = 'scrapy.pqueues.ScrapyPriorityQueue'
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
