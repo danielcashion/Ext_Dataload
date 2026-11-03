@@ -150,8 +150,8 @@ class TidExtractorSpider(scrapy.Spider):
             end_date = ''
             
      #   try:
-            created_datetime = datetime.now()
-            created_datetime = created_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        created_datetime = datetime.now()
+        created_datetime = created_datetime.strftime("%Y-%m-%d %H:%M:%S")
     #    except Exception as e:
     #        created_datetme = ''
             
