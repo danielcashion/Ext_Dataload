@@ -1,0 +1,115 @@
+name: polinrider-guard
+
+# Dependency-free scanner. It never installs packages and never executes
+# repository code. This file is excluded from its own scans.
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Scan for PolinRider
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan tree without executing repository code
+        shell: bash
+        run: |
+          set -euo pipefail
+          findings="$(mktemp)"
+          trap 'rm -f "$findings"' EXIT
+          self="./.github/workflows/polinrider-guard.yml"
+
+          add() {
+            printf '%s\n' "$1" >> "$findings"
+          }
+
+          each_file() {
+            find . -type f -not -path './.git/*' -not -path "$self" -print0
+          }
+
+          # label, regex. Prints file paths only, never matching source lines.
+          check_regex() {
+            local label="$1"
+            local pattern="$2"
+            local f
+            while IFS= read -r -d '' f; do
+              if grep -a -q -E -e "$pattern" "$f"; then
+                add "${label}: ${f#./}"
+              fi
+            done < <(each_file)
+          }
+
+          check_regex "marker A8-5593" 'A8-5593'
+          check_regex "marker A8-2350-2" 'A8-2350-2'
+          check_regex "marker A8-API" 'A8-API'
+          check_regex "marker A8-2019" 'A8-2019'
+          check_regex "marker 8-2019" '8-2019'
+          check_regex "marker -2616-2" '-2616-2'
+          check_regex "marker var z" "var z = '[-0-9A-Za-z]+'"
+          check_regex "obfuscation }(global,require)" '\}\(global,require\)'
+          check_regex "obfuscation global[" 'global\['
+          check_regex "marker n**-8A" 'n\*\*-8A'
+
+          while IFS= read -r -d '' f; do
+            case "$f" in
+              *.js|*.cjs|*.mjs|*.ts)
+                if grep -a -q -E '[[:space:]]{50,}[^[:space:]]' "$f"; then
+                  add "long whitespace then code: ${f#./}"
+                fi
+                ;;
+            esac
+          done < <(each_file)
+
+          while IFS= read -r -d '' f; do
+            if grep -a -q -E 'node[[:space:]]+api\.js' "$f"; then
+              add "node api.js in package.json: ${f#./}"
+            fi
+          done < <(find . -type f -name 'package.json' -not -path './.git/*' -print0)
+
+          while IFS= read -r -d '' f; do
+            if grep -a -q -F 'folderOpen' "$f"; then
+              add "folderOpen task: ${f#./}"
+            fi
+          done < <(each_file)
+
+          while IFS= read -r -d '' f; do
+            if grep -a -q -E '^[[:space:]]*/?(branch_structure\.json|temp_auto_push\.bat|temp_interactive_push\.bat|config\.bat)[[:space:]]*$' "$f"; then
+              add "gitignore drop-file name: ${f#./}"
+            fi
+          done < <(find . -type f -name '.gitignore' -not -path './.git/*' -not -path "$self" -print0)
+
+          while IFS= read -r -d '' f; do
+            case "$f" in
+              */branch_structure.json|*/temp_auto_push.bat|*/temp_interactive_push.bat|*/config.bat)
+                add "drop file present: ${f#./}"
+                ;;
+            esac
+          done < <(each_file)
+
+          while IFS= read -r -d '' f; do
+            add "oversized config (>2KB): ${f#./}"
+          done < <(find . -type f \
+            \( -name 'postcss.config.*' -o -name 'babel.config.*' -o -name 'tailwind.config.*' \
+               -o -name 'metro.config.*' -o -name 'eslint.config.*' \
+               -o -name '.eslintrc' -o -name '.eslintrc.*' \) \
+            -not -path './.git/*' \
+            -size +2048c \
+            -print0)
+
+          if [ -s "$findings" ]; then
+            echo "PolinRider indicators found:"
+            sort -u "$findings"
+            exit 1
+          fi
+          echo "No PolinRider indicators found."
